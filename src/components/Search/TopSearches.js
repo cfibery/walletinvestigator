@@ -47,7 +47,6 @@ const TermWrapper = styled.div`
 const QuickSearchButton = styled.button`
   padding: 10px 0;
   color: #607d8b;
-  transition: color 0.2s ease-in-out;
   background: none;
   border: 0;
   text-align: left;

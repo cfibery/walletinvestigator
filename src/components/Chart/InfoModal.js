@@ -14,7 +14,6 @@ const Link = styled.a`
   text-decoration: none;
   padding: 10px 0;
   color: #607d8b;
-  transition: color 0.2s ease-in-out;
   display: flex;
   align-items: center;
   justify-content: space-between;

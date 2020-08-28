@@ -12,7 +12,6 @@ const Wrapper = styled.div`
 const ExternalLink = styled.a`
   color: #2196f3;
   padding: 10px;
-  transition: color 0.2s ease-in-out;
   &:hover {
     color: #ff9800;
   }

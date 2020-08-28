@@ -29,7 +29,6 @@ const Footer = styled.div`
 const DiscordLink = styled.a`
   color: #7288db;
   text-decoration: none;
-  transition: color 0.2s ease-in-out;
   &:hover {
     color: ${({ theme }) => theme.color};
   }
