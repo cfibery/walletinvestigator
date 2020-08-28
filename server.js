@@ -285,7 +285,7 @@ app.post('/generate', async (req, res) => {
 });
 
 app.get('*', (req, res) => {
-  return res.sendFile(__dirname + '../public/index.html');
+  return res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 // Sockets
