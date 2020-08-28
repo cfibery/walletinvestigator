@@ -10,10 +10,15 @@ app.use(bodyParser.json());
 app.use('/', express.static('build'));
 
 const cache = {};
-
 const blacklist = ['0x0000000000000000000000000000000000000000'];
-
 const topSearches = {};
+
+const axiosInstance = axios.create({
+  headers: {
+    'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36',
+  },
+});
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,7 +39,7 @@ app.get('/top-searches', (_, res) => {
 app.get('/search', async (req, res) => {
   const { term } = req.query;
   try {
-    const { data } = await axios.get(
+    const { data } = await axiosInstance.get(
       `https://etherscan.io/searchHandler?term=${term}`
     );
     res.send({ payload: data, success: true });
@@ -60,7 +65,7 @@ async function getRichAddresses(contractAddress) {
   const responses = await Promise.all(
     Array.from({ length: 20 }).map(async (_, i) => {
       await throttle(5000);
-      return axios.get(
+      return axiosInstance.get(
         `https://etherscan.io/token/generic-tokenholders2?a=${contractAddress}&p=${
           i + 1
         }`
@@ -82,7 +87,7 @@ async function getHoldings(richAddresses, contractAddress) {
   const responses = await Promise.all(
     richAddresses.map(async (address) => {
       await throttle(5000);
-      return axios.get(
+      return axiosInstance.get(
         `https://etherscan.io/tokenholdingsHandler.aspx?a=${address}&sort=total_price_usd&order=desc&fav=`
       );
     })
@@ -163,7 +168,7 @@ function mapTokenToHolding(tokenInfo, wallet) {
 }
 
 async function appendMissingMarketCap(holding) {
-  const { data } = await axios.get(
+  const { data } = await axiosInstance.get(
     `https://api.coingecko.com/api/v3/coins/ethereum/contract/${holding.address}`
   );
   const totalSupply = data.market_data.total_supply;
@@ -173,7 +178,7 @@ async function appendMissingMarketCap(holding) {
 
 async function appendMarketCap(holdings) {
   const addresses = holdings.map(({ address }) => address);
-  const { data } = await axios.get(
+  const { data } = await axiosInstance.get(
     `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=${addresses}&vs_currencies=usd&include_market_cap=true`
   );
   const filteredHoldings = holdings.filter((holding) => data[holding.address]);
@@ -197,8 +202,8 @@ async function appendMarketCap(holdings) {
 
 // async function appendMarketCap(holding) {
 // await throttle(5000);
-// const { data } = await axios.get(
-//   `https://etherscan.io/token/${holding.address}`
+// const { data } = await axiosInstance.get(
+//   `https://etherscan.io/token/${holding.address}`,
 // );
 // const $ = cheerio.load(data);
 // const circulatingCapTr = $('#tokenInfo tr')
