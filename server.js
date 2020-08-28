@@ -28,7 +28,8 @@ function sleep(ms) {
 
 let throttleTime = 0;
 async function throttle(ms) {
-  return await sleep(Math.floor(Math.random() * ms) + throttleTime);
+  const maxThrottle = ms + throttleTime;
+  return await sleep(Math.floor(Math.random() * maxThrottle));
 }
 
 app.get('/top-searches', (_, res) => {
