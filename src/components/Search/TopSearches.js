@@ -15,6 +15,7 @@ const Button = styled.button`
   border: 0;
   background: none;
   outline: none;
+  font-size: 1rem;
   &:hover,
   &:focus {
     color: #ff9800;
