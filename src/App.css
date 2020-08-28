@@ -1,0 +1,13 @@
+* {
+  box-sizing: border-box;
+}
+
+body,
+input,
+button {
+  font-family: 'Poppins', sans-serif;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
