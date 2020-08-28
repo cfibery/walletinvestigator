@@ -7,6 +7,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useModal, useTopSearches, useSearchHandler } from '../../hooks';
 import Modal from '../Modal';
+import SpinnerSvg from './SpinnerSvg';
 
 const Button = styled.button`
   color: #9e9e9e;
@@ -22,6 +23,16 @@ const Button = styled.button`
 
 const ModalHeading = styled.h3`
   margin: 0;
+`;
+
+const EmptyMessage = styled.p`
+  color: #607d8b;
+  margin: 10px 0;
+  margin-bottom: 0;
+`;
+
+const SpinnerWrapper = styled.div`
+  text-align: center;
 `;
 
 const TermWrapper = styled.div`
@@ -65,7 +76,15 @@ function TopSearches() {
       <Modal open={open} onClose={toggle}>
         <ModalHeading>Top searches</ModalHeading>
         <TermWrapper>
-          {topSearches.map(({ name, address, count }) => (
+          {!topSearches && (
+            <SpinnerWrapper>
+              <SpinnerSvg />
+            </SpinnerWrapper>
+          )}
+          {topSearches?.length === 0 && (
+            <EmptyMessage>No searches yet</EmptyMessage>
+          )}
+          {topSearches?.map(({ name, address, count }) => (
             <React.Fragment key={`top-search-${address}`}>
               <QuickSearchButton
                 onClick={() => {

@@ -18,6 +18,7 @@ const HeadingWrapper = styled.div`
     background: 0;
     cursor: pointer;
     color: ${({ theme }) => theme.color};
+    outline: none;
     &:hover,
     &:focus {
       color: #ff9800;
