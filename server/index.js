@@ -5,7 +5,7 @@ const cheerio = require('cheerio');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
-const port = 4000;
+const port = process.env.PORT || 4000;
 app.use(bodyParser.json());
 app.use('/', express.static('build'));
 
