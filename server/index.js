@@ -7,6 +7,7 @@ const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const port = 4000;
 app.use(bodyParser.json());
+app.use('/', express.static('build'));
 
 const cache = {};
 
@@ -276,6 +277,10 @@ app.post('/generate', async (req, res) => {
     console.log(err);
     return res.send({ error: err.message, success: false });
   }
+});
+
+app.get('*', (req, res) => {
+  return res.sendFile(__dirname + '../public/index.html');
 });
 
 // Sockets
