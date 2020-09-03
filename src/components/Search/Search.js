@@ -3,7 +3,8 @@ import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimesCircle } from '@fortawesome/free-solid-svg-icons';
-import { useSearch, useDebounce, useSearchHandler } from '../../hooks';
+import { useSearch, useDebounce } from '../../hooks';
+import SearchInput from './SearchInput';
 import TopSearches from './TopSearches';
 import Results from './Results';
 
@@ -17,27 +18,6 @@ const TitleWrapper = styled.div`
   justify-content: space-between;
   & > h3 {
     margin: 0;
-  }
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 5px 0;
-  border: none;
-  background: transparent;
-  border-bottom: 2px solid #5dc1f8;
-  font-size: 1rem;
-  color: ${({ theme }) => theme.color};
-  &:focus {
-    border-bottom: 2px solid #0e84f1;
-    outline: none;
-  }
-  &:focus + div {
-    display: block;
-  }
-  &[disabled] {
-    border-color: grey;
-    cursor: wait;
   }
 `;
 
@@ -64,7 +44,6 @@ function Search() {
   const debouncedQuery = useDebounce(query, 300);
   const results = useSearch(debouncedQuery);
 
-  const handleResultsClick = useSearchHandler();
   const handleRemoveSelected = async (token, idx) => {
     dispatch({
       type: 'REMOVE_SELECTED',
@@ -75,19 +54,11 @@ function Search() {
   return (
     <Wrapper>
       <TitleWrapper>
-        <h3>Enter token name / ticker:</h3>
+        <h3>Token name, symbol, or contract address:</h3>
         <TopSearches />
       </TitleWrapper>
-      <Input
-        onChange={(e) =>
-          dispatch({ type: 'SET_QUERY', payload: e.target.value })
-        }
-        value={query}
-        disabled={loading}
-      />
-      {query && results?.length > 0 && (
-        <Results results={results} handleClick={handleResultsClick} />
-      )}
+      <SearchInput />
+      {query && results?.length > 0 && <Results results={results} />}
       {selected.map((token, i) => (
         <SelectedButton
           key={`selected-${token.address}`}

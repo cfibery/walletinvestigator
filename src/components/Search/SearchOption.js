@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+import { useSearchHandler } from '../../hooks';
 
 const Wrapper = styled.div`
   display: flex;
@@ -65,29 +66,21 @@ const Name = styled.span`
     background: #fff;
     box-shadow: 0 0 6px 0px #fff;
     border-radius: 50%;
+    max-width: 30px;
   }
   & > span {
     font-weight: bold;
+    font-size: 1rem;
   }
 `;
 
-export default function SearchOption({
-  img,
-  name,
-  ticker,
-  address,
-  handleClick,
-}) {
+export default function SearchOption({ img, name, address }) {
+  const handleClick = useSearchHandler();
   return (
     <Wrapper>
-      <Option onClick={() => handleClick({ ticker, address, name })}>
+      <Option onClick={() => handleClick({ address, name })}>
         <Name>
-          {img && (
-            <img
-              src={`http://etherscan.io/token/images/${img}`}
-              alt="token logo"
-            />
-          )}
+          <img src={img} alt="token logo" />
           <span>{name}</span>
         </Name>
         <span>{address}</span>

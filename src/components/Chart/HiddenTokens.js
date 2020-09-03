@@ -96,7 +96,7 @@ function HiddenTokens({ hiddenData, updateHiddenData, clearHiddenData }) {
             <HiddenButton
               onClick={() => updateHiddenData(hiddenData[address], false)}
             >
-              {hiddenData[address].ticker}
+              {hiddenData[address].symbol}
             </HiddenButton>
             <ModalButton onClick={() => handleModalOpen(address)}>
               <FontAwesomeIcon icon={faEllipsisV} />

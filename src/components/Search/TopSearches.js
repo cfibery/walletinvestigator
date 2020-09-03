@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -19,6 +20,10 @@ const Button = styled.button`
   &:hover,
   &:focus {
     color: #ff9800;
+  }
+  &[disabled] {
+    cursor: wait;
+    color: #607d8b;
   }
 `;
 
@@ -65,12 +70,13 @@ const QuickSearchButton = styled.button`
 `;
 
 function TopSearches() {
+  const { loading } = useSelector(({ loading }) => ({ loading }));
   const { open, toggle } = useModal();
   const topSearches = useTopSearches();
   const handleClick = useSearchHandler();
   return (
     <>
-      <Button onClick={toggle}>
+      <Button onClick={toggle} disabled={loading}>
         <FontAwesomeIcon icon={faFireAlt} />
       </Button>
       <Modal open={open} onClose={toggle}>

@@ -23,8 +23,8 @@ const Value = styled.span`
 `;
 
 function formatNumber(value) {
-  if (value % 1 !== 0) return value.toFixed(2);
-  return new Intl.NumberFormat(navigator.language).format(value);
+  if (value < 1) return value;
+  return new Intl.NumberFormat(navigator.language).format(Math.floor(value));
 }
 
 function singularize(val, str) {
@@ -38,14 +38,14 @@ function renderAdditionalInfo(sorting, data) {
       return (
         <>
           <Additional>Holdings: </Additional>
-          {formatNumber(data.holdings)}
+          {formatNumber(data.balance)}
         </>
       );
     case '%':
       return (
         <>
           <Additional>Ownership: </Additional>%
-          {formatNumber(data.ownershipPercentage)}
+          {data.ownershipPercentage.toFixed(2)}
         </>
       );
     case 'wallets':
@@ -56,14 +56,21 @@ function renderAdditionalInfo(sorting, data) {
           {formattedValue} {singularize(formattedValue, sorting)}
         </>
       );
+    case 'aggregate':
+      return (
+        <>
+          <Additional>Score: </Additional>
+          {data.aggregate.toFixed(2)}
+        </>
+      );
   }
 }
 
-function HoldingInfo({ ticker, address, marketCap, value, ...rest }) {
+function HoldingInfo({ symbol, address, marketCap, value, ...rest }) {
   const sorting = useSelector(({ sorting }) => sorting);
   return (
     <Wrapper>
-      <h3>{ticker}</h3>
+      <h3>{symbol}</h3>
       <Address>{address}</Address>
       <p>Market cap: ${formatNumber(marketCap)}</p>
       <p>{renderAdditionalInfo(sorting, rest)}</p>

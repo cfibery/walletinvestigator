@@ -4,23 +4,20 @@ function combineData(data) {
   const dataMap = Object.values(data)
     .reduce((prev, next) => prev.concat(next)) // flatten
     .reduce(
-      (acc, { value, address, holdings, wallets, ...rest }) => ({
+      (acc, { value, address, balance, wallet, marketCap, ...rest }) => ({
         ...acc,
-        [address]: acc[address]
-          ? {
-              address,
-              value: acc[address].value + value,
-              holdings: acc[address].holdings + holdings,
-              wallets: acc[address].wallets.concat(wallets),
-              ...rest,
-            }
-          : {
-              address,
-              value,
-              holdings,
-              wallets,
-              ...rest,
-            },
+        [address]: {
+          address,
+          marketCap,
+          value: acc[address]?.value + value || value,
+          balance: acc[address]?.balance + balance || balance,
+          wallets: acc[address]?.wallets.concat(wallet) || [wallet],
+          walletCount: acc[address]?.walletCount + 1 || 1,
+          ownershipPercentage:
+            acc[address]?.ownershipPercentage + (value / marketCap) * 100 ||
+            (value / marketCap) * 100,
+          ...rest,
+        },
       }),
       {}
     );
@@ -43,6 +40,23 @@ function sortByWallets(data) {
   });
 }
 
+function sortByAggregate(data) {
+  const [maxValue, maxWalletCount] = data.reduce(
+    (acc, { value, walletCount }) => [
+      !acc[0] || acc[0] < value ? value : acc[0],
+      !acc[1] || acc[1] < walletCount ? walletCount : acc[1],
+    ],
+    []
+  );
+  return data
+    .map((holding) => ({
+      ...holding,
+      aggregate:
+        holding.value / maxValue + holding.walletCount / maxWalletCount,
+    }))
+    .sort((a, b) => b.aggregate - a.aggregate);
+}
+
 function sortData(data, sorting) {
   switch (sorting) {
     case '$':
@@ -52,6 +66,8 @@ function sortData(data, sorting) {
       return sortByOwnership(data);
     case 'wallets':
       return sortByWallets(data);
+    case 'aggregate':
+      return sortByAggregate(data);
   }
 }
 
