@@ -194,7 +194,8 @@ app.post('/generate', async (req, res) => {
   }
   if (pending[contractAddress]) {
     return res.send({
-      payload: 'Token data pending, please try again in a few minutes.',
+      payload:
+        'This token data is still loading, please try again in a few minutes.',
       success: false,
     });
   }
