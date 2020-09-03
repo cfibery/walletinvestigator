@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "proxy": "http://localhost:4000",
+  "engines": {
+    "node": "14.x"
+  },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.30",
     "@fortawesome/free-solid-svg-icons": "^5.14.0",
@@ -12,6 +15,7 @@
     "@testing-library/user-event": "^7.1.2",
     "axios": "^0.19.2",
     "body-parser": "^1.19.0",
+    "bottleneck": "^2.19.5",
     "cheerio": "^1.0.0-rc.3",
     "express": "^4.17.1",
     "immer": "^7.0.7",
@@ -29,7 +33,7 @@
   },
   "scripts": {
     "dev": "react-scripts start",
-    "start": "node server.js",
+    "start": "node server",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

@@ -18,29 +18,19 @@ const Wrapper = styled.div`
   }
 `;
 
-function Results({ results, handleClick }) {
+function Results({ results }) {
   return (
     <Wrapper>
-      {results
-        .filter((result) => result.match(/<div/))
-        .map((result) => {
-          const div = document.createElement('div');
-          div.innerHTML = result;
-          const name = div.querySelector('div').textContent;
-          const ticker = name.match(/ \((.+)\)$/)?.[1];
-          const address = div.querySelector('span.text-secondary').textContent;
-          const img = result.match(/([a-zA-Z0-9_]+\.png)$/);
-          return (
-            <SearchOption
-              key={address}
-              img={img ? img[1] : null}
-              name={name}
-              ticker={ticker}
-              address={address}
-              handleClick={handleClick}
-            />
-          );
-        })}
+      {results.map(({ img, name, address }) => {
+        return (
+          <SearchOption
+            key={`search-result-${address}`}
+            img={img}
+            name={name}
+            address={address}
+          />
+        );
+      })}
     </Wrapper>
   );
 }

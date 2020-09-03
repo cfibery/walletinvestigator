@@ -3,26 +3,18 @@ import { useSelector, useDispatch } from 'react-redux';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
-import themes from '../themes';
 
 const Button = styled.button`
-  background: ${({ theme }) => themes[theme].background};
-  color: ${({ theme }) => themes[theme].color};
+  background: none;
+  color: ${({ theme }) => theme.color};
   border: 0;
-  padding: 6px 10px;
+  outline: none;
   border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
-  box-shadow: 0px 0px 6px 0px
-    ${({ theme }) =>
-      theme === 'light'
-        ? themes['dark'].background
-        : themes['light'].background};
-  transition: box-shadow 0.2s ease-in-out;
   &:hover,
   &:focus {
-    outline: none;
-    box-shadow: 0px 0px 6px 0px ${({ theme }) => themes[theme].background};
+    color: #ff9800;
   }
 `;
 
@@ -34,7 +26,6 @@ function ThemeButton() {
 
   return (
     <Button
-      theme={theme.name === 'light' ? 'dark' : 'light'}
       onClick={() =>
         handleUpdateTheme(theme.name === 'light' ? 'dark' : 'light')
       }

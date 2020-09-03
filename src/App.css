@@ -11,3 +11,7 @@ button {
 body.modal-open {
   overflow: hidden;
 }
+
+.recharts-bar-rectangle {
+  cursor: pointer;
+}

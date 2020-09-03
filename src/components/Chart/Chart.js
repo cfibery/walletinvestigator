@@ -71,7 +71,7 @@ function Chart({ data }) {
         height={Math.max(Math.floor(height * 0.65), 400)}
         data={filteredData}
       >
-        <XAxis dataKey="ticker" />
+        <XAxis dataKey="symbol" />
         <Tooltip content={<CustomTooltip />} />
         <Legend formatter={formatLegend} verticalAlign="top" />
         <Bar

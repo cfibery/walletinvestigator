@@ -6,6 +6,7 @@ import {
   faDollarSign,
   faPercentage,
   faWallet,
+  faFlask,
 } from '@fortawesome/free-solid-svg-icons';
 
 const Wrapper = styled.div`
@@ -34,6 +35,7 @@ export const sortingKeys = {
   $: 'value',
   '%': 'ownershipPercentage',
   wallets: 'walletCount',
+  aggregate: 'aggregate',
 };
 
 function Sorting() {
@@ -62,6 +64,13 @@ function Sorting() {
         onClick={() => dispatch({ type: 'SET_SORTING', payload: 'wallets' })}
       >
         <FontAwesomeIcon icon={faWallet} />
+      </FilterButton>
+      <FilterButton
+        title="Sort by aggregated value and wallet count"
+        active={sorting === 'aggregate'}
+        onClick={() => dispatch({ type: 'SET_SORTING', payload: 'aggregate' })}
+      >
+        <FontAwesomeIcon icon={faFlask} />
       </FilterButton>
     </Wrapper>
   );
