@@ -56,6 +56,13 @@ function renderAdditionalInfo(sorting, data) {
           {formattedValue} {singularize(formattedValue, sorting)}
         </>
       );
+    case 'aggregate':
+      return (
+        <>
+          <Additional>Mixed: </Additional>
+          {data.aggregate.toFixed(2)}
+        </>
+      );
   }
 }
 

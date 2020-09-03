@@ -50,7 +50,10 @@ function Chart({ data }) {
     .filter(
       (holding) =>
         !hiddenData[holding.address]?.hidden &&
-        selected.every(({ address }) => address !== holding.address)
+        selected.every(
+          ({ address }) =>
+            address.toLowerCase() !== holding.address.toLowerCase()
+        )
     )
     .slice(0, 20);
   const { width, height } = window.visualViewport;

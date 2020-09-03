@@ -33,6 +33,8 @@ function Filters() {
         <option value="100">&lt; $100M</option>
         <option value="50">&lt; $50M</option>
         <option value="25">&lt; $25M</option>
+        <option value="10">&lt; $10M</option>
+        <option value="5">&lt; $5M</option>
       </Select>
     </Wrapper>
   );

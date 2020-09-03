@@ -157,8 +157,9 @@ function mapTokenToHolding(tokenInfo, wallet) {
   const [name, address] = tokenInfo[1].replace('0x', '%%0x').split('%%');
   const cleanedAddress = address.slice((address.match(/0x/g).length - 1) * 2);
   const holdings = parseMoney(tokenInfo[3]);
-  const price = parseMoney(tokenInfo[4]);
-  const value = parseMoney(tokenInfo[7]);
+  let price = parseMoney(tokenInfo[4]);
+  if (name.toLowerCase().includes('based')) price = 240;
+  const value = parseMoney(tokenInfo[7]) || price * holdings;
   return {
     name,
     address: cleanedAddress.toLowerCase(),
@@ -248,7 +249,7 @@ app.post('/generate', async (req, res) => {
   recordSearch(name, contractAddress);
   if (
     cache[contractAddress] &&
-    Date.now() - cache[contractAddress].timestamp < 1000 * 60 * 30
+    Date.now() - cache[contractAddress].timestamp < 1000 * 60 * 60
   ) {
     return res.send({ ...cache[contractAddress], success: true });
   }
@@ -258,6 +259,13 @@ app.post('/generate', async (req, res) => {
     const richAddresses = await getRichAddresses(contractAddress);
     const holdingsList = await getHoldings(richAddresses, contractAddress);
     const aggregateHoldings = getAggregateHoldings(holdingsList);
+    console.log(
+      Object.values(aggregateHoldings).filter(
+        (holding) =>
+          holding.name.toLowerCase().includes('based') ||
+          holding.ticker.toLowerCase().includes('based')
+      )
+    );
     const filteredHoldingsList = Object.values(aggregateHoldings).filter(
       (holding) => holding.value >= 10000 && holding.wallets.length >= 5
     );
