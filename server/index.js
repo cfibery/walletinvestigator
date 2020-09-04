@@ -176,6 +176,21 @@ function filterHoldings(holdings) {
   );
 }
 
+const pending = {};
+async function performGenerate(contractAddress) {
+  pending[contractAddress] = true;
+  try {
+    const richAddresses = await getRichAddresses(contractAddress);
+    const holdings = await getHoldings(richAddresses, contractAddress);
+    const filteredHoldings = filterHoldings(holdings);
+
+    apiCache.set(contractAddress, filteredHoldings);
+  } catch (err) {
+    console.log('perform', err);
+  }
+  pending[contractAddress] = false;
+}
+
 function recordSearch(name, address) {
   topSearches[name] = {
     name,
@@ -184,7 +199,6 @@ function recordSearch(name, address) {
   };
 }
 
-const pending = {};
 app.post('/generate', async (req, res) => {
   const contractAddress = req.body.address.toLowerCase();
   const name = req.body.name;
@@ -193,29 +207,10 @@ app.post('/generate', async (req, res) => {
     return res.send({ ...apiCache.get(contractAddress), success: true });
   }
   if (pending[contractAddress]) {
-    return res.send({
-      payload:
-        'This token data is still loading, please try again in a few minutes.',
-      success: false,
-    });
+    return res.send({ payload: 'loading', success: true });
   }
-  pending[contractAddress] = true;
-  try {
-    const richAddresses = await getRichAddresses(contractAddress);
-    const holdings = await getHoldings(richAddresses, contractAddress);
-    const filteredHoldings = filterHoldings(holdings);
-
-    apiCache.set(contractAddress, filteredHoldings);
-    res.send({
-      payload: filteredHoldings,
-      timestamp: apiCache.get(contractAddress).timestamp,
-      success: true,
-    });
-  } catch (err) {
-    console.log(err);
-    res.send({ payload: err.message, success: false });
-  }
-  pending[contractAddress] = false;
+  performGenerate(contractAddress);
+  res.send({ payload: 'loading', success: true });
 });
 
 app.get('*', (_, res) => {
