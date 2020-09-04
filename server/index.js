@@ -1,20 +1,23 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const path = require('path');
 const axios = require('axios');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const Bottleneck = require('bottleneck');
 const exchangeWallets = require('./exchangeWallets.json');
+const contracts = require('./contracts.json');
 const ApiCache = require('./apicache');
 const port = process.env.PORT || 4000;
 app.use(bodyParser.json());
 app.use('/', express.static('build'));
 
-const apiCache = new ApiCache(1000 * 60 * 60 * 6);
-const blacklist = ['0x0000000000000000000000000000000000000000'].concat(
-  exchangeWallets
-);
+const walletCache = new ApiCache(1000 * 60 * 60 * 6);
+const dataCache = new ApiCache(1000 * 60 * 60 * 6);
+const blacklist = ['0x0000000000000000000000000000000000000000']
+  .concat(exchangeWallets)
+  .concat(contracts);
 const topSearches = {};
 
 // 133.33 -> ~7.5 requests / second
@@ -110,7 +113,11 @@ async function getRichAddresses(contractAddress) {
   const { data } = await getEthplorerData(
     `https://api.ethplorer.io/getTopTokenHolders/${contractAddress}?apiKey=${process.env.ETHPLORER_KEY}&limit=1000`
   );
-  return data.holders.map(({ address }) => address);
+  return data.holders.reduce(
+    (acc, { address }) =>
+      blacklist.includes(address) ? acc : acc.concat(address.toLowerCase()),
+    []
+  );
 }
 
 function toDecimal(num, decimals) {
@@ -142,23 +149,25 @@ function reduceTokensToHoldings({ tokens, address }, contractAddress) {
 async function getHoldings(richAddresses, contractAddress) {
   const addressesInfo = await Promise.all(
     richAddresses.map(async (address) => {
-      if (apiCache.isValid(address)) return apiCache.get(address).payload;
+      if (walletCache.isValid(address)) return walletCache.get(address).payload;
       const response = await getEthplorerData(
         `https://api.ethplorer.io/getAddressInfo/${address}?apiKey=${process.env.ETHPLORER_KEY}`
       );
-      if (!response.data?.tokens) {
+      if (!response.data?.tokens || !response.data?.address) {
         console.error(response);
         throw new Error(`Bad data for ${address}`);
       }
-      apiCache.set(address, response.data);
+      if (response.data.contractInfo) {
+        walletCache.set(address, null);
+        return null;
+      }
+      walletCache.set(address, response.data);
       return response.data;
     })
   );
 
   return addressesInfo.reduce((acc, data) => {
-    if (data.contractInfo || blacklist.includes(data.address.toLowerCase())) {
-      return acc;
-    }
+    if (!data) return acc;
 
     return acc.concat(reduceTokensToHoldings(data, contractAddress));
   }, []);
@@ -189,9 +198,9 @@ async function performGenerate(contractAddress) {
     const holdings = await getHoldings(richAddresses, contractAddress);
     const filteredHoldings = filterHoldings(holdings);
 
-    apiCache.set(contractAddress, filteredHoldings);
+    dataCache.set(contractAddress, filteredHoldings);
   } catch (err) {
-    apiCache.set(contractAddress, 'error');
+    dataCache.set(contractAddress, 'error');
     console.error(err);
   }
   pending[contractAddress] = false;
@@ -208,13 +217,13 @@ function recordSearch(name, address) {
 app.post('/generate', async (req, res) => {
   const contractAddress = req.body.address.toLowerCase();
   const name = req.body.name;
-  if (apiCache.get(contractAddress).payload === 'error') {
-    apiCache.delete(contractAddress);
+  if (dataCache.get(contractAddress)?.payload === 'error') {
+    dataCache.delete(contractAddress);
     return res.send({ success: false });
   }
-  if (apiCache.isValid(contractAddress)) {
+  if (dataCache.isValid(contractAddress)) {
     recordSearch(name, contractAddress);
-    return res.send({ ...apiCache.get(contractAddress), success: true });
+    return res.send({ ...dataCache.get(contractAddress), success: true });
   }
   if (pending[contractAddress]) {
     return res.send({ payload: 'loading', success: true });
