@@ -152,9 +152,13 @@ async function getHoldings(richAddresses, contractAddress) {
   );
 
   return addressesInfo.reduce((acc, data) => {
-    if (!data?.tokens) return;
-    if (data.contractInfo || blacklist.includes(data.address.toLowerCase()))
+    if (
+      !data?.tokens ||
+      data.contractInfo ||
+      blacklist.includes(data.address.toLowerCase())
+    ) {
       return acc;
+    }
 
     return acc.concat(reduceTokensToHoldings(data, contractAddress));
   }, []);
