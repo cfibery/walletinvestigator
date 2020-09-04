@@ -21,8 +21,9 @@ const Wrapper = styled.div`
   border-radius: 4px;
   padding: 10px;
   max-height: 400px;
-  min-width: 300px;
   overflow: auto;
+  width: 90%;
+  max-width: 400px;
 `;
 
 function Modal({ open, onClose, children }) {

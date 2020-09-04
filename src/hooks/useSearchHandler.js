@@ -1,10 +1,10 @@
 import { batch, useSelector, useDispatch, shallowEqual } from 'react-redux';
 
-async function fetchData({ name, address }, dispatch) {
+async function fetchData({ name, symbol, address }, dispatch) {
   const response = await fetch('/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, address }),
+    body: JSON.stringify({ name, symbol, address }),
   });
   const { payload, timestamp, success } = await response.json();
   if (!success) {
@@ -17,11 +17,14 @@ async function fetchData({ name, address }, dispatch) {
       type: 'SET_DATA',
       payload: { address, data: payload },
     });
-    return setTimeout(() => fetchData({ name, address }, dispatch), 10000);
+    return setTimeout(
+      () => fetchData({ name, symbol, address }, dispatch),
+      10000
+    );
   }
 
   batch(() => {
-    dispatch({ type: 'ADD_SELECTED', payload: { name, address } });
+    dispatch({ type: 'ADD_SELECTED', payload: { name, symbol, address } });
     dispatch({ type: 'SET_LOADING', payload: false });
     dispatch({ type: 'SET_DATA', payload: { address, data: payload } });
     dispatch({ type: 'SET_LAST_UPDATE', payload: timestamp });
@@ -37,7 +40,7 @@ export default function useSearchHandler() {
     shallowEqual
   );
   const dispatch = useDispatch();
-  return async ({ name, address }) => {
+  return async ({ name, symbol, address }) => {
     address = address.toLowerCase();
     dispatch({ type: 'SET_QUERY', payload: '' });
 
@@ -45,6 +48,6 @@ export default function useSearchHandler() {
     if (data[address] === 'loading') return;
 
     dispatch({ type: 'SET_LOADING', payload: true });
-    fetchData({ name, address }, dispatch);
+    fetchData({ name, symbol, address }, dispatch);
   };
 }

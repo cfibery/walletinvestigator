@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 import { useSearch, useDebounce } from '../../hooks';
+import { formatName } from './utils';
 import SearchInput from './SearchInput';
 import TopSearches from './TopSearches';
 import Results from './Results';
@@ -65,7 +66,8 @@ function Search() {
           onClick={() => handleRemoveSelected(token, i)}
           disabled={loading}
         >
-          {token.name} <FontAwesomeIcon icon={faTimesCircle} />
+          {formatName(token.name)} ({token.symbol}){' '}
+          <FontAwesomeIcon icon={faTimesCircle} />
         </SelectedButton>
       ))}
     </Wrapper>

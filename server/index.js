@@ -159,23 +159,25 @@ async function performGenerate(contractAddress) {
   pending[contractAddress] = false;
 }
 
-function recordSearch(name, address) {
-  topSearches[name] = {
+function recordSearch(name, symbol, address) {
+  topSearches[address] = {
     name,
+    symbol,
     address,
-    count: topSearches[name] ? topSearches[name].count + 1 : 1,
+    count: topSearches[address] ? topSearches[address].count + 1 : 1,
   };
 }
 
 app.post('/generate', async (req, res) => {
   const contractAddress = req.body.address.toLowerCase();
   const name = req.body.name;
+  const symbol = req.body.symbol;
   if (dataCache.get(contractAddress)?.payload === 'error') {
     dataCache.delete(contractAddress);
     return res.send({ success: false });
   }
   if (dataCache.isValid(contractAddress)) {
-    recordSearch(name, contractAddress);
+    recordSearch(name, symbol, contractAddress);
     return res.send({ ...dataCache.get(contractAddress), success: true });
   }
   if (pending[contractAddress]) {

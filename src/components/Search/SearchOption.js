@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 import { useSearchHandler } from '../../hooks';
+import { formatName } from './utils';
 
 const Wrapper = styled.div`
   display: flex;
@@ -74,14 +75,16 @@ const Name = styled.span`
   }
 `;
 
-export default function SearchOption({ img, name, address }) {
+export default function SearchOption({ img, name, symbol, address }) {
   const handleClick = useSearchHandler();
   return (
     <Wrapper>
-      <Option onClick={() => handleClick({ address, name })}>
+      <Option onClick={() => handleClick({ address, name, symbol })}>
         <Name>
           <img src={img} alt="token logo" />
-          <span>{name}</span>
+          <span>
+            {formatName(name)} ({symbol})
+          </span>
         </Name>
         <span>{address}</span>
       </Option>

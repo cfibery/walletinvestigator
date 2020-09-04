@@ -7,6 +7,7 @@ import {
   faArrowCircleRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { useModal, useTopSearches, useSearchHandler } from '../../hooks';
+import { formatName } from './utils';
 import Modal from '../Modal';
 import SpinnerSvg from './SpinnerSvg';
 
@@ -90,15 +91,16 @@ function TopSearches() {
           {topSearches?.length === 0 && (
             <EmptyMessage>No searches yet</EmptyMessage>
           )}
-          {topSearches?.map(({ name, address, count }) => (
+          {topSearches?.map(({ name, symbol, address, count }) => (
             <React.Fragment key={`top-search-${address}`}>
               <QuickSearchButton
                 onClick={() => {
-                  handleClick({ name, address });
+                  handleClick({ name, symbol, address });
                   toggle();
                 }}
               >
-                {name} <FontAwesomeIcon icon={faArrowCircleRight} />
+                {formatName(name)} ({symbol}){' '}
+                <FontAwesomeIcon icon={faArrowCircleRight} />
               </QuickSearchButton>
               <span>{count}</span>
             </React.Fragment>
