@@ -143,20 +143,20 @@ async function getHoldings(richAddresses, contractAddress) {
   const addressesInfo = await Promise.all(
     richAddresses.map(async (address) => {
       if (apiCache.isValid(address)) return apiCache.get(address).payload;
-      const { data } = await getEthplorerData(
+      const response = await getEthplorerData(
         `https://api.ethplorer.io/getAddressInfo/${address}?apiKey=${process.env.ETHPLORER_KEY}`
       );
-      apiCache.set(address, data);
-      return data;
+      if (!response.data?.tokens) {
+        console.error(response);
+        throw new Error(`Bad data for ${address}`);
+      }
+      apiCache.set(address, response.data);
+      return response.data;
     })
   );
 
   return addressesInfo.reduce((acc, data) => {
-    if (
-      !data?.tokens ||
-      data.contractInfo ||
-      blacklist.includes(data.address.toLowerCase())
-    ) {
+    if (data.contractInfo || blacklist.includes(data.address.toLowerCase())) {
       return acc;
     }
 
@@ -191,7 +191,8 @@ async function performGenerate(contractAddress) {
 
     apiCache.set(contractAddress, filteredHoldings);
   } catch (err) {
-    console.log('perform', err);
+    apiCache.set(contractAddress, 'error');
+    console.error(err);
   }
   pending[contractAddress] = false;
 }
@@ -207,6 +208,10 @@ function recordSearch(name, address) {
 app.post('/generate', async (req, res) => {
   const contractAddress = req.body.address.toLowerCase();
   const name = req.body.name;
+  if (apiCache.get(contractAddress).payload === 'error') {
+    apiCache.delete(contractAddress);
+    return res.send({ success: false });
+  }
   if (apiCache.isValid(contractAddress)) {
     recordSearch(name, contractAddress);
     return res.send({ ...apiCache.get(contractAddress), success: true });

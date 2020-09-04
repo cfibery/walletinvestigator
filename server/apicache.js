@@ -12,6 +12,9 @@ class ApiCache {
   isValid(key) {
     return Date.now() - this.cache[key]?.timestamp < this.maxAge;
   }
+  delete(key) {
+    delete this.cache[key];
+  }
 }
 
 module.exports = ApiCache;

@@ -6,7 +6,12 @@ async function fetchData({ name, address }, dispatch) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, address }),
   });
-  const { payload, timestamp } = await response.json();
+  const { payload, timestamp, success } = await response.json();
+  if (!success) {
+    dispatch({ type: 'SET_LOADING', payload: false });
+    alert('An error occured, probably due to API limits. Please try again.');
+    return;
+  }
   if (payload === 'loading') {
     dispatch({
       type: 'SET_DATA',
