@@ -22,7 +22,6 @@ const topSearches = {};
 
 // 133.33 -> ~7.5 requests / second
 const limiter = new Bottleneck({ minTime: 133.33 });
-const getCoinGeckoData = limiter.wrap(axios.get);
 const getEthplorerData = limiter.wrap(axios.get);
 
 app.get('/top-searches', (_, res) => {
@@ -59,54 +58,8 @@ async function getCmcTokens() {
 setInterval(getCmcTokens, 1000 * 60 * 60 * 12); // get coins every 12 hours
 getCmcTokens(); // initial call
 
-app.get('/search', async (_, res) => {
+app.get('/load-tokens', async (_, res) => {
   res.send({ payload: cmcTokens, success: true });
-});
-
-async function searchCoinGecko(address) {
-  try {
-    const { data } = await getCoinGeckoData(
-      `https://api.coingecko.com/api/v3/coins/ethereum/contract/${address}`
-    );
-    return [
-      {
-        img: data.image.small,
-        name: data.name,
-        symbol: data.symbol,
-        address,
-      },
-    ];
-  } catch (err) {
-    console.log(`${address} not found on CoinGecko`);
-    return null;
-  }
-}
-
-async function searchEthplorer(address) {
-  try {
-    const { data } = await getEthplorerData(
-      `https://api.ethplorer.io/getTokenInfo/${address}?apiKey=${process.env.ETHPLORER_KEY}`
-    );
-    return [
-      {
-        img: 'http://etherscan.io/images/main/empty-token.png',
-        name: data.name,
-        symbol: data.symbol,
-        address,
-      },
-    ];
-  } catch (err) {
-    console.log(`${address} not found on Ethplorer`);
-    return null;
-  }
-}
-
-app.get('/search-contract', async (req, res) => {
-  const { address } = req.query;
-  let payload = await searchCoinGecko(address);
-  if (!payload) payload = await searchEthplorer(address);
-  if (!payload) return res.send({ payload: 'Not found', success: false });
-  res.send({ payload, success: true });
 });
 
 async function getRichAddresses(contractAddress) {

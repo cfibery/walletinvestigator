@@ -1,5 +1,45 @@
 import { useState, useEffect } from 'react';
 
+async function searchCoinGecko(address) {
+  try {
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/coins/ethereum/contract/${address}`
+    );
+    const data = await response.json();
+    return [
+      {
+        img: data.image.small,
+        name: data.name,
+        symbol: data.symbol,
+        address,
+      },
+    ];
+  } catch (err) {
+    console.log(`${address} not found on CoinGecko`);
+    return null;
+  }
+}
+
+async function searchEthplorer(address) {
+  try {
+    const response = await fetch(
+      `https://api.ethplorer.io/getTokenInfo/${address}?apiKey=freekey`
+    );
+    const data = await response.json();
+    return [
+      {
+        img: 'http://etherscan.io/images/main/empty-token.png',
+        name: data.name,
+        symbol: data.symbol,
+        address,
+      },
+    ];
+  } catch (err) {
+    console.log(`${address} not found on Ethplorer`);
+    return null;
+  }
+}
+
 function getResults(data, query) {
   return data
     .filter(
@@ -14,23 +54,26 @@ export default function useSearch(query) {
   const [payload, setPayload] = useState(null);
   const [data, setData] = useState(null);
   useEffect(() => {
-    async function fetchResults() {
+    async function fetchTokens() {
+      const response = await fetch('/load-tokens');
+      const { payload } = await response.json();
+      setData(payload);
+    }
+    fetchTokens();
+  }, []);
+  useEffect(() => {
+    async function search() {
       if (!query) return null;
 
       if (query.startsWith('0x') && query.length === 42) {
-        const response = await fetch(`/search-contract?address=${query}`);
-        const { payload, success } = await response.json();
-        if (!success) return alert(payload);
+        let payload = await searchCoinGecko(query);
+        if (!payload) payload = await searchEthplorer(query);
+        if (!payload) return alert('Contract not found');
         return setPayload(payload);
-      } else if (!data) {
-        const response = await fetch(`/search?term=${query}`);
-        const { payload } = await response.json();
-        setData(payload);
-        return setPayload(getResults(payload, query));
       }
       setPayload(getResults(data, query));
     }
-    fetchResults();
+    search();
   }, [query, data]);
 
   return payload;
