@@ -140,18 +140,19 @@ function reduceTokensToHoldings({ tokens, address }, contractAddress) {
 }
 
 async function getHoldings(richAddresses, contractAddress) {
-  const responses = await Promise.all(
+  const addressesInfo = await Promise.all(
     richAddresses.map(async (address) => {
       if (apiCache.isValid(address)) return apiCache.get(address).payload;
-      const response = await getEthplorerData(
+      const { data } = await getEthplorerData(
         `https://api.ethplorer.io/getAddressInfo/${address}?apiKey=${process.env.ETHPLORER_KEY}`
       );
-      apiCache.set(address, response);
-      return response;
+      apiCache.set(address, data);
+      return data;
     })
   );
 
-  return responses.reduce((acc, { data }) => {
+  return addressesInfo.reduce((acc, data) => {
+    if (!data?.tokens) return;
     if (data.contractInfo || blacklist.includes(data.address.toLowerCase()))
       return acc;
 
