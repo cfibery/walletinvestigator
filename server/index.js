@@ -202,8 +202,8 @@ function recordSearch(name, address) {
 app.post('/generate', async (req, res) => {
   const contractAddress = req.body.address.toLowerCase();
   const name = req.body.name;
-  recordSearch(name, contractAddress);
   if (apiCache.isValid(contractAddress)) {
+    recordSearch(name, contractAddress);
     return res.send({ ...apiCache.get(contractAddress), success: true });
   }
   if (pending[contractAddress]) {

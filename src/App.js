@@ -54,7 +54,7 @@ function App() {
         )}
         <Footer>
           <VisitorsCounter />
-          <DiscordLink href="https://discord.gg/X56vdk" target="_blank">
+          <DiscordLink href="https://discord.gg/pHcSxs3" target="_blank">
             Discord
           </DiscordLink>
           <ThemeButton />
