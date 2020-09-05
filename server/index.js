@@ -43,8 +43,8 @@ const getCoinGeckoData = limiter.wrap(axios.get);
 function computeSearchScore(search, maxCount, maxTimestamp, now) {
   const countScore = search.count / maxCount;
   const elapsed = now - search.timestamp;
-  const maxElapsed = now - maxTimestamp;
-  const timestampScore = 1 / (elapsed / maxElapsed);
+  const minElapsed = now - maxTimestamp;
+  const timestampScore = 1 / (elapsed / minElapsed);
   return countScore + timestampScore;
 }
 
