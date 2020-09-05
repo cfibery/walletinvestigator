@@ -42,31 +42,31 @@ const SpinnerWrapper = styled.div`
   text-align: center;
 `;
 
-const TermWrapper = styled.div`
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  & > span {
-    text-align: right;
-  }
-`;
-
 const QuickSearchButton = styled.button`
   padding: 10px 0;
-  color: #607d8b;
+  padding-bottom: 0;
   background: none;
   border: 0;
   text-align: left;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-right: 10px;
+  width: 100%;
   cursor: pointer;
   font-size: 1rem;
   outline: none;
   &:hover,
   &:focus {
     color: #2196f3;
+  }
+`;
+
+const AddressLink = styled.a`
+  text-decoration: none;
+  font-size: 0.8rem;
+  color: #607d8b;
+  &:hover {
+    color: #ff9800;
   }
 `;
 
@@ -82,30 +82,36 @@ function TopSearches() {
       </Button>
       <Modal open={open} onClose={toggle}>
         <ModalHeading>Top searches</ModalHeading>
-        <TermWrapper>
-          {!topSearches && (
-            <SpinnerWrapper>
-              <SpinnerSvg />
-            </SpinnerWrapper>
-          )}
-          {topSearches?.length === 0 && (
-            <EmptyMessage>No searches yet</EmptyMessage>
-          )}
-          {topSearches?.map(({ name, symbol, address, count }) => (
-            <React.Fragment key={`top-search-${address}`}>
-              <QuickSearchButton
-                onClick={() => {
-                  handleClick({ name, symbol, address });
-                  toggle();
-                }}
-              >
+        {!topSearches && (
+          <SpinnerWrapper>
+            <SpinnerSvg />
+          </SpinnerWrapper>
+        )}
+        {topSearches?.length === 0 && (
+          <EmptyMessage>No searches yet</EmptyMessage>
+        )}
+        {topSearches?.map(({ name, symbol, address }) => (
+          <div key={`top-search-${address}`}>
+            <QuickSearchButton
+              onClick={() => {
+                handleClick({ name, symbol, address });
+                toggle();
+              }}
+            >
+              <span>
                 {formatName(name)} ({symbol}){' '}
-                <FontAwesomeIcon icon={faArrowCircleRight} />
-              </QuickSearchButton>
-              <span>{count}</span>
-            </React.Fragment>
-          ))}
-        </TermWrapper>
+              </span>
+              <FontAwesomeIcon icon={faArrowCircleRight} />
+            </QuickSearchButton>
+            <AddressLink
+              href={`https://etherscan.io/token/${address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {address}
+            </AddressLink>
+          </div>
+        ))}
       </Modal>
     </>
   );

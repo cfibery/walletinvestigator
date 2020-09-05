@@ -16,6 +16,15 @@ const Wrapper = styled.div`
   }
 `;
 
+const ButtonsWrapper = styled.div`
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-gap: 5px;
+  @media (min-width: 500px) {
+    display: block;
+  }
+`;
+
 const FilterButton = styled.button`
   padding: 10px;
   border: 0;
@@ -44,34 +53,38 @@ function Sorting() {
   return (
     <Wrapper>
       <h4>Sorting</h4>
-      <FilterButton
-        title="Sort by total $ value"
-        active={sorting === '$'}
-        onClick={() => dispatch({ type: 'SET_SORTING', payload: '$' })}
-      >
-        <FontAwesomeIcon icon={faDollarSign} />
-      </FilterButton>
-      <FilterButton
-        title="Sort by market cap % ownership"
-        active={sorting === '%'}
-        onClick={() => dispatch({ type: 'SET_SORTING', payload: '%' })}
-      >
-        <FontAwesomeIcon icon={faPercentage} />
-      </FilterButton>
-      <FilterButton
-        title="Sort by wallet count"
-        active={sorting === 'wallets'}
-        onClick={() => dispatch({ type: 'SET_SORTING', payload: 'wallets' })}
-      >
-        <FontAwesomeIcon icon={faWallet} />
-      </FilterButton>
-      <FilterButton
-        title="Sort by aggregated value and wallet count"
-        active={sorting === 'aggregate'}
-        onClick={() => dispatch({ type: 'SET_SORTING', payload: 'aggregate' })}
-      >
-        <FontAwesomeIcon icon={faFlask} />
-      </FilterButton>
+      <ButtonsWrapper>
+        <FilterButton
+          title="Sort by total $ value"
+          active={sorting === '$'}
+          onClick={() => dispatch({ type: 'SET_SORTING', payload: '$' })}
+        >
+          <FontAwesomeIcon icon={faDollarSign} />
+        </FilterButton>
+        <FilterButton
+          title="Sort by market cap % ownership"
+          active={sorting === '%'}
+          onClick={() => dispatch({ type: 'SET_SORTING', payload: '%' })}
+        >
+          <FontAwesomeIcon icon={faPercentage} />
+        </FilterButton>
+        <FilterButton
+          title="Sort by wallet count"
+          active={sorting === 'wallets'}
+          onClick={() => dispatch({ type: 'SET_SORTING', payload: 'wallets' })}
+        >
+          <FontAwesomeIcon icon={faWallet} />
+        </FilterButton>
+        <FilterButton
+          title="Sort by aggregated value and wallet count"
+          active={sorting === 'aggregate'}
+          onClick={() =>
+            dispatch({ type: 'SET_SORTING', payload: 'aggregate' })
+          }
+        >
+          <FontAwesomeIcon icon={faFlask} />
+        </FilterButton>
+      </ButtonsWrapper>
     </Wrapper>
   );
 }

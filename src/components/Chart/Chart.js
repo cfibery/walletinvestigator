@@ -46,14 +46,14 @@ function Chart({ data }) {
   const hasHiddenAddresses = Object.values(hiddenData).some(({ hidden }) =>
     Boolean(hidden)
   );
+  const { width, height } = window.visualViewport;
   const filteredData = memoizedSorting(data, filter, sorting)
     .filter(
       (holding) =>
         !hiddenData[holding.address]?.hidden &&
         selected.every(({ address }) => address !== holding.address)
     )
-    .slice(0, 20);
-  const { width, height } = window.visualViewport;
+    .slice(0, width < 768 ? 10 : 20);
   const lastUpdateMinutes = Math.floor((Date.now() - lastUpdate) / (1000 * 60));
   const lastUpdateMessage =
     lastUpdateMinutes <= 1 ? 'Just now' : `${lastUpdateMinutes} minutes ago`;

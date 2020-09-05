@@ -8,9 +8,7 @@ class ApiCache {
   }
   set(key, value) {
     this.cache[key] = { payload: value, timestamp: Date.now() };
-  }
-  isValid(key) {
-    return Date.now() - this.cache[key]?.timestamp < this.maxAge;
+    setTimeout(() => this.delete(key), this.maxAge);
   }
   delete(key) {
     delete this.cache[key];
