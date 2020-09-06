@@ -46,7 +46,8 @@ function Chart({ data }) {
   const hasHiddenAddresses = Object.values(hiddenData).some(({ hidden }) =>
     Boolean(hidden)
   );
-  const { width, height } = window.visualViewport;
+  const width = window.visualViewport?.width || window.innerWidth;
+  const height = window.visualViewport?.height || window.innerHeight;
   const filteredData = memoizedSorting(data, filter, sorting)
     .filter(
       (holding) =>
@@ -67,7 +68,7 @@ function Chart({ data }) {
         />
       )}
       <BarChart
-        width={width - 20}
+        width={width - 25}
         height={Math.max(Math.floor(height * 0.65), 400)}
         data={filteredData}
       >
