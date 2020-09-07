@@ -1,7 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+import {
+  faExternalLinkAlt,
+  faCheckCircle,
+} from '@fortawesome/free-solid-svg-icons';
 import { useSearchHandler } from '../../hooks';
 import { formatName } from './utils';
 
@@ -72,10 +75,13 @@ const Name = styled.span`
   & > span {
     font-weight: bold;
     font-size: 1rem;
+    & > svg {
+      color: #4caf50;
+    }
   }
 `;
 
-export default function SearchOption({ img, name, symbol, address }) {
+export default function SearchOption({ img, name, symbol, address, ready }) {
   const handleClick = useSearchHandler();
   return (
     <Wrapper>
@@ -83,7 +89,8 @@ export default function SearchOption({ img, name, symbol, address }) {
         <Name>
           <img src={img} alt="token logo" />
           <span>
-            {formatName(name)} ({symbol})
+            {formatName(name)} ({symbol}){' '}
+            {ready && <FontAwesomeIcon icon={faCheckCircle} />}
           </span>
         </Name>
         <span>{address}</span>

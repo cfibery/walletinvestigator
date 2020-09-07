@@ -21,7 +21,7 @@ const Wrapper = styled.div`
 function Results({ results }) {
   return (
     <Wrapper>
-      {results.map(({ img, name, symbol, address }) => {
+      {results.map(({ img, name, symbol, address, ready }) => {
         return (
           <SearchOption
             key={`search-result-${address}`}
@@ -29,6 +29,7 @@ function Results({ results }) {
             name={name}
             symbol={symbol}
             address={address}
+            ready={ready}
           />
         );
       })}

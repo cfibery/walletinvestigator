@@ -63,7 +63,8 @@ app.get('/top-searches', async (_, res) => {
     .sort(
       (a, b) => computeSearchScore(b, ...args) - computeSearchScore(a, ...args)
     )
-    .slice(0, 20);
+    .slice(0, 20)
+    .map((search) => ({ ...search, ready: !!dataCache.get(search.address) }));
   res.send({ payload: sortedSearches });
 });
 
@@ -85,7 +86,7 @@ async function getCmcTokens() {
         img: `https://s2.coinmarketcap.com/static/img/coins/64x64/${id}.png`,
         name,
         symbol,
-        address: platform.token_address,
+        address: platform.token_address.toLowerCase(),
       }));
   } catch (err) {
     console.error('CMC get tokens error', err);
@@ -95,7 +96,11 @@ setInterval(getCmcTokens, 1000 * 60 * 60 * 12); // get coins every 12 hours
 getCmcTokens(); // initial call
 
 app.get('/load-tokens', (_, res) => {
-  res.send({ payload: cmcTokens, success: true });
+  const payload = cmcTokens.map((token) => ({
+    ...token,
+    ready: !!dataCache.get(token.address),
+  }));
+  res.send({ payload, success: true });
 });
 
 async function getRichAddresses(contractAddress) {
@@ -179,8 +184,8 @@ async function getHoldings(richAddresses, contractAddress) {
         `https://api.ethplorer.io/getAddressInfo/${address}?apiKey=${process.env.ETHPLORER_KEY}`
       );
       if (!response.data?.tokens || !response.data?.address) {
-        console.error(response);
-        throw new Error(`Bad data for ${address}`);
+        console.error(`No tokens or address for ${address}`);
+        return null;
       }
       if (response.data.contractInfo) {
         walletCache.set(address, null);
@@ -219,9 +224,9 @@ function filterHoldings(holdings) {
   );
 }
 
-const pending = {};
+let pending = false;
 async function performGenerate(contractAddress) {
-  pending[contractAddress] = true;
+  pending = true;
   try {
     const richAddresses = await getRichAddresses(contractAddress);
     const holdings = await getHoldings(richAddresses, contractAddress);
@@ -232,8 +237,11 @@ async function performGenerate(contractAddress) {
     dataCache.set(contractAddress, 'error');
     console.error(err);
   }
-  pending[contractAddress] = false;
+  pending = false;
 }
+setInterval(() => {
+  if (queue.length > 0 && !pending) performGenerate(queue.shift());
+}, 1000);
 
 async function recordSearch(name, symbol, address) {
   const document = await topSearchesCollection.findOne({ address });
@@ -253,6 +261,15 @@ async function recordSearch(name, symbol, address) {
   );
 }
 
+function makeLoadingPayload(contractAddress) {
+  return {
+    payload: 'loading',
+    queuePosition: queue.indexOf(contractAddress),
+    success: true,
+  };
+}
+
+const queue = [];
 app.post('/generate', (req, res) => {
   const contractAddress = req.body.address.toLowerCase();
   const name = req.body.name;
@@ -265,11 +282,11 @@ app.post('/generate', (req, res) => {
     recordSearch(name, symbol, contractAddress);
     return res.send({ ...dataCache.get(contractAddress), success: true });
   }
-  if (pending[contractAddress]) {
-    return res.send({ payload: 'loading', success: true });
+  if (queue.includes(contractAddress)) {
+    return res.send(makeLoadingPayload(contractAddress));
   }
-  performGenerate(contractAddress);
-  res.send({ payload: 'loading', success: true });
+  queue.push(contractAddress);
+  res.send(makeLoadingPayload(contractAddress));
 });
 
 app.get('*', (_, res) => {

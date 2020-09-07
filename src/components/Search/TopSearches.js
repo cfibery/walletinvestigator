@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faFireAlt,
   faArrowCircleRight,
+  faCheckCircle,
 } from '@fortawesome/free-solid-svg-icons';
 import { useModal, useTopSearches, useSearchHandler } from '../../hooks';
 import { formatName } from './utils';
@@ -55,6 +56,9 @@ const QuickSearchButton = styled.button`
   cursor: pointer;
   font-size: 1rem;
   outline: none;
+  & > span > svg {
+    color: #4caf50;
+  }
   &:hover,
   &:focus {
     color: #2196f3;
@@ -90,7 +94,7 @@ function TopSearches() {
         {topSearches?.length === 0 && (
           <EmptyMessage>No searches yet</EmptyMessage>
         )}
-        {topSearches?.map(({ name, symbol, address }) => (
+        {topSearches?.map(({ name, symbol, address, ready }) => (
           <div key={`top-search-${address}`}>
             <QuickSearchButton
               onClick={() => {
@@ -100,6 +104,7 @@ function TopSearches() {
             >
               <span>
                 {formatName(name)} ({symbol}){' '}
+                {ready && <FontAwesomeIcon icon={faCheckCircle} />}
               </span>
               <FontAwesomeIcon icon={faArrowCircleRight} />
             </QuickSearchButton>
