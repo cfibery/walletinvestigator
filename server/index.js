@@ -237,10 +237,11 @@ async function performGenerate(contractAddress) {
     dataCache.set(contractAddress, 'error');
     console.error(err);
   }
+  queue.shift();
   pending = false;
 }
 setInterval(() => {
-  if (queue.length > 0 && !pending) performGenerate(queue.shift());
+  if (queue.length > 0 && !pending) performGenerate(queue[0]);
 }, 1000);
 
 async function recordSearch(name, symbol, address) {
