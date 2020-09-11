@@ -10,6 +10,7 @@ const initialState = {
   selected: [],
   sorting: '$',
   filter: 'all',
+  mode: 'follow',
   lastUpdate: '',
 };
 
@@ -43,6 +44,9 @@ export default function reducer(state = initialState, action) {
         break;
       case 'SET_FILTER':
         draft.filter = action.payload;
+        break;
+      case 'SET_MODE':
+        draft.mode = action.payload;
         break;
       case 'SET_LAST_UPDATE':
         draft.lastUpdate = action.payload;

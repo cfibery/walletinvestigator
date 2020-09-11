@@ -3,3 +3,4 @@ export { default as Chart } from './Chart';
 export { default as Loading } from './Loading';
 export { default as ThemeButton } from './ThemeButton';
 export { default as VisitorsCounter } from './VisitorsCounter';
+export { default as Toolbar } from './Toolbar';

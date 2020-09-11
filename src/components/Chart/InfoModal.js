@@ -1,8 +1,10 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import styled from 'styled-components';
-import HoldingInfo from './HoldingInfo';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+import { sortingKeys } from '../Toolbar/Sorting';
+import HoldingInfo from './HoldingInfo';
 import Modal from '../Modal';
 
 const LinksWrapper = styled.div`
@@ -26,6 +28,10 @@ const Link = styled.a`
 `;
 
 function InfoModal({ open, onClose, data }) {
+  const { sorting } = useSelector(({ sorting }) => ({ sorting }));
+  const sortedWallets = data.wallets.sort(
+    (a, b) => b[sortingKeys[sorting]] - a[sortingKeys[sorting]]
+  );
   return (
     <Modal open={open} onClose={() => onClose(data.address)}>
       <HoldingInfo {...data} />
@@ -36,7 +42,7 @@ function InfoModal({ open, onClose, data }) {
         >
           Token tracker <FontAwesomeIcon icon={faExternalLinkAlt} />
         </Link>
-        {data.wallets.map((wallet, i) => (
+        {sortedWallets.map((wallet, i) => (
           <Link
             href={`https://etherscan.io/tokenholdings?a=${wallet}`}
             target="_blank"

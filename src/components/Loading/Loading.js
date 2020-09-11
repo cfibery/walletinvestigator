@@ -18,11 +18,10 @@ const WaitMessage = styled.div`
 `;
 
 function getWaitEmoji(waitTime) {
-  if (waitTime < 3) return '😌';
   if (waitTime < 6) return '😞';
   if (waitTime < 12) return '😩';
   if (waitTime < 24) return '😵';
-  if (waitTime < 48) return '💀';
+  return '💀';
 }
 
 function Loading() {
@@ -34,11 +33,15 @@ function Loading() {
     <Wrapper>
       <div>
         <LoadingSvg />
-        {queuePosition > 0 && <div>Position in queue: {queuePosition}</div>}
-        <WaitMessage>Estimated wait time:</WaitMessage>
-        <WaitMessage>
-          {estimatedWait.toFixed(1)} minutes {getWaitEmoji(estimatedWait)}
-        </WaitMessage>
+        {queuePosition > 0 && (
+          <>
+            <div>Position in queue: {queuePosition}</div>
+            <WaitMessage>Estimated wait time:</WaitMessage>
+            <WaitMessage>
+              {estimatedWait.toFixed(1)} minutes {getWaitEmoji(estimatedWait)}
+            </WaitMessage>
+          </>
+        )}
       </div>
     </Wrapper>
   );

@@ -1,24 +1,42 @@
 import memoizeOne from 'memoize-one';
 
-function combineData(data) {
+function prependSearched(str) {
+  return `searched${str[0].toUpperCase()}${str.slice(1)}`;
+}
+
+function combineData(data, mode) {
+  const getKey = (str) => (mode === 'follow' ? str : prependSearched(str));
   const dataMap = Object.values(data)
     .reduce((prev, next) => prev.concat(next)) // flatten
     .reduce(
-      (acc, { value, address, balance, wallet, marketCap, ...rest }) => ({
-        ...acc,
-        [address]: {
+      (
+        acc,
+        {
           address,
-          marketCap,
-          value: acc[address]?.value + value || value,
-          balance: acc[address]?.balance + balance || balance,
-          wallets: acc[address]?.wallets.concat(wallet) || [wallet],
-          walletCount: acc[address]?.walletCount + 1 || 1,
-          ownershipPercentage:
-            acc[address]?.ownershipPercentage + (value / marketCap) * 100 ||
-            (value / marketCap) * 100,
-          ...rest,
-        },
-      }),
+          wallet,
+          [getKey('value')]: value,
+          [getKey('balance')]: balance,
+          [getKey('marketCap')]: marketCap,
+          marketCap: tokenMarketCap,
+          ...rest
+        }
+      ) => {
+        return {
+          ...acc,
+          [address]: {
+            ...rest,
+            address,
+            marketCap: tokenMarketCap,
+            value: acc[address]?.value + value || value,
+            balance: acc[address]?.balance + balance || balance,
+            wallets: acc[address]?.wallets.concat(wallet) || [wallet],
+            walletCount: acc[address]?.walletCount + 1 || 1,
+            ownershipPercentage:
+              acc[address]?.ownershipPercentage + (value / marketCap) * 100 ||
+              (value / marketCap) * 100,
+          },
+        };
+      },
       {}
     );
 
@@ -57,6 +75,10 @@ function sortByAggregate(data) {
     .sort((a, b) => b.aggregate - a.aggregate);
 }
 
+function sortByBalanceChange(data) {
+  return data.sort((a, b) => b.balanceChange - a.balanceChange);
+}
+
 function sortData(data, sorting) {
   switch (sorting) {
     case '$':
@@ -68,6 +90,8 @@ function sortData(data, sorting) {
       return sortByWallets(data);
     case 'aggregate':
       return sortByAggregate(data);
+    case 'sortByBalanceChange':
+      return sortByBalanceChange(data);
   }
 }
 
@@ -76,8 +100,8 @@ function filterData(data, filter) {
   return data.filter((holding) => holding.marketCap < Number(filter) * 1000000);
 }
 
-function combineAndSort(data, filter, sorting) {
-  const combinedData = combineData(data);
+function combineAndSort(data, filter, sorting, mode) {
+  const combinedData = combineData(data, mode);
   const filteredData = filterData(combinedData, filter);
   return sortData(filteredData, sorting);
 }

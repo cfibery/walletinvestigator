@@ -6,9 +6,10 @@ class ApiCache {
   get(key) {
     return this.cache[key];
   }
-  set(key, value) {
-    this.cache[key] = { payload: value, timestamp: Date.now() };
-    setTimeout(() => this.delete(key), this.maxAge);
+  set(key, value, timestamp = Date.now()) {
+    this.cache[key] = { payload: value, timestamp };
+    const elapsed = Date.now() - timestamp;
+    setTimeout(() => this.delete(key), this.maxAge - elapsed);
   }
   delete(key) {
     delete this.cache[key];

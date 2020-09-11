@@ -14,26 +14,35 @@ const port = process.env.PORT || 4000;
 app.use(bodyParser.json());
 app.use('/', express.static('build'));
 
+const CACHE_MAX_AGE = 1000 * 60 * 60 * 6;
+const dataCache = new ApiCache(CACHE_MAX_AGE);
+const blacklist = ['0x0000000000000000000000000000000000000000']
+  .concat(exchangeWallets)
+  .concat(contracts);
+
 const client = new MongoClient(process.env.MONGO_URL, {
   useUnifiedTopology: true,
 });
-let topSearchesCollection;
+let topSearchesCollection, snapshotsCollection;
 async function initDb() {
   try {
     await client.connect();
-    const db = await client.db('whaleinspector');
+    const db = await client.db(process.env.DB_NAME);
     topSearchesCollection = await db.collection('topSearches');
+    snapshotsCollection = await db.collection('snapshots');
+    await snapshotsCollection
+      .find(
+        { timestamp: { $gte: Date.now() - CACHE_MAX_AGE } },
+        { contractAddress: 1, timestamp: 1 }
+      )
+      .forEach(({ contractAddress, timestamp }) =>
+        dataCache.set(contractAddress, true, timestamp)
+      );
   } catch (err) {
     console.error(err);
   }
 }
 initDb();
-
-const walletCache = new ApiCache(1000 * 60 * 60 * 6);
-const dataCache = new ApiCache(1000 * 60 * 60 * 6);
-const blacklist = ['0x0000000000000000000000000000000000000000']
-  .concat(exchangeWallets)
-  .concat(contracts);
 
 // 133.33 -> ~7.5 requests / second
 const limiter = new Bottleneck({ minTime: 133.33 });
@@ -93,7 +102,7 @@ async function getCmcTokens() {
   }
 }
 setInterval(getCmcTokens, 1000 * 60 * 60 * 12); // get coins every 12 hours
-getCmcTokens(); // initial call
+// getCmcTokens(); // initial call
 
 app.get('/load-tokens', (_, res) => {
   const payload = cmcTokens.map((token) => ({
@@ -105,7 +114,7 @@ app.get('/load-tokens', (_, res) => {
 
 async function getRichAddresses(contractAddress) {
   const { data } = await getEthplorerData(
-    `https://api.ethplorer.io/getTopTokenHolders/${contractAddress}?apiKey=${process.env.ETHPLORER_KEY}&limit=1000`
+    `https://api.ethplorer.io/getTopTokenHolders/${contractAddress}?apiKey=${process.env.ETHPLORER_KEY}&limit=100`
   );
   return data.holders.reduce(
     (acc, { address }) =>
@@ -123,6 +132,9 @@ function reduceTokensToHoldings(
   tokenPricesMap,
   contractAddress
 ) {
+  const searchedToken = tokens.find(
+    ({ tokenInfo }) => tokenInfo.address.toLowerCase() === contractAddress
+  );
   return tokens.reduce((acc, { tokenInfo, balance }) => {
     const tokenAddress = tokenInfo.address.toLowerCase();
     const decimalBalance = toDecimal(balance, tokenInfo.decimals);
@@ -134,6 +146,19 @@ function reduceTokensToHoldings(
     const marketCapUsd = tokenPricesMap[tokenAddress]?.usd_market_cap;
     const dilutedMarketCapUsd =
       toDecimal(tokenInfo.totalSupply, tokenInfo.decimals) * rate;
+
+    const searchedBalance = toDecimal(
+      searchedToken.balance,
+      searchedToken.tokenInfo.decimals
+    );
+    const searchedValue = searchedBalance * tokenPricesMap[contractAddress].usd;
+    const searchedMarketCap =
+      tokenPricesMap[contractAddress].usd_market_cap ||
+      toDecimal(
+        searchedToken.tokenInfo.totalSupply,
+        searchedToken.tokenInfo.decimals
+      ) * tokenPricesMap[contractAddress].usd;
+
     return acc.concat({
       wallet: address.toLowerCase(),
       address: tokenAddress,
@@ -142,6 +167,9 @@ function reduceTokensToHoldings(
       balance: decimalBalance,
       value,
       marketCap: marketCapUsd || dilutedMarketCapUsd,
+      searchedBalance,
+      searchedValue,
+      searchedMarketCap,
     });
   }, []);
 }
@@ -179,20 +207,11 @@ async function fetchCoinGeckoData(addressesInfo) {
 async function getHoldings(richAddresses, contractAddress) {
   const addressesInfo = await Promise.all(
     richAddresses.map(async (address) => {
-      if (walletCache.get(address)) return walletCache.get(address).payload;
-      const response = await getEthplorerData(
+      const { data } = await getEthplorerData(
         `https://api.ethplorer.io/getAddressInfo/${address}?apiKey=${process.env.ETHPLORER_KEY}`
       );
-      if (!response.data?.tokens || !response.data?.address) {
-        console.error(`No tokens or address for ${address}`);
-        return null;
-      }
-      if (response.data.contractInfo) {
-        walletCache.set(address, null);
-        return null;
-      }
-      walletCache.set(address, response.data);
-      return response.data;
+      if (!data?.tokens || !data?.address || data?.contractInfo) return null;
+      return data;
     })
   );
 
@@ -220,7 +239,62 @@ function filterHoldings(holdings) {
   );
   return holdings.filter(
     ({ address }) =>
-      aggregateMap[address].wallets >= 5 && aggregateMap[address].value >= 10000
+      aggregateMap[address].wallets >= 1 && aggregateMap[address].value >= 1000
+  );
+}
+
+async function recordSnapshot(contractAddress, holdings, timestamp) {
+  const document = await snapshotsCollection.findOne({ contractAddress });
+  // let { timestamp24h, timestamp7d, timestamp30d } = document || {};
+  if (document) {
+    holdings = holdings.map((holding) => {
+      const previous = document.holdings.find(
+        ({ address }) => address === holding.address
+      );
+      const balanceChange = previous?.balance
+        ? (holding.balance * 100) / previous.balance - 100
+        : 0;
+      // let { balanceChange24h, balanceChange7d, balanceChange30d } = previous;
+      // if (timestamp - timestamp24h >= 1000 * 60 * 60 * 24) {
+      //   balanceChange24h = previous?.balance24h
+      //     ? (holding.balance / previous.balance24h) * 100
+      //     : 0;
+      //   timestamp24h = timestamp;
+      // }
+      // if (timestamp - timestamp7d >= 1000 * 60 * 60 * 24 * 7) {
+      //   balanceChange7d = previous?.balance7d
+      //     ? (holding.balance / previous.balance7d) * 100
+      //     : 0;
+      //   timestamp7d = timestamp;
+      // }
+      // if (timestamp - timestamp30d >= 1000 * 60 * 60 * 24 * 30) {
+      //   balanceChange30d = previous?.balance30d
+      //     ? (holding.balance / previous.balance30d) * 100
+      //     : 0;
+      //   timestamp30d = timestamp;
+      // }
+      return {
+        ...holding,
+        balanceChange,
+        // balanceChange24h,
+        // balanceChange7d,
+        // balanceChange30d,
+      };
+    });
+  }
+  snapshotsCollection.updateOne(
+    { contractAddress },
+    {
+      $set: {
+        contractAddress,
+        timestamp,
+        // timestamp24h,
+        // timestamp7d,
+        // timestamp30d,
+        holdings,
+      },
+    },
+    { upsert: true }
   );
 }
 
@@ -232,7 +306,9 @@ async function performGenerate(contractAddress) {
     const holdings = await getHoldings(richAddresses, contractAddress);
     const filteredHoldings = filterHoldings(holdings);
 
-    dataCache.set(contractAddress, filteredHoldings);
+    const now = Date.now();
+    await recordSnapshot(contractAddress, filteredHoldings, now);
+    dataCache.set(contractAddress, true, now);
   } catch (err) {
     dataCache.set(contractAddress, 'error');
     console.error(err);
@@ -271,7 +347,7 @@ function makeLoadingPayload(contractAddress) {
 }
 
 const queue = [];
-app.post('/generate', (req, res) => {
+app.post('/generate', async (req, res) => {
   const contractAddress = req.body.address.toLowerCase();
   const name = req.body.name;
   const symbol = req.body.symbol;
@@ -281,7 +357,12 @@ app.post('/generate', (req, res) => {
   }
   if (dataCache.get(contractAddress)) {
     recordSearch(name, symbol, contractAddress);
-    return res.send({ ...dataCache.get(contractAddress), success: true });
+    const data = await snapshotsCollection.findOne({ contractAddress });
+    return res.send({
+      payload: data.holdings,
+      timestamp: data.timestamp,
+      success: true,
+    });
   }
   if (queue.includes(contractAddress)) {
     return res.send(makeLoadingPayload(contractAddress));
@@ -296,14 +377,10 @@ app.get('*', (_, res) => {
 
 // Sockets
 
-let visitors = 0;
-
 io.on('connection', (socket) => {
-  visitors++;
-  io.emit('visitors', visitors);
+  io.emit('visitors', io.engine.clientsCount);
   socket.on('disconnect', () => {
-    visitors = Math.max(visitors - 1, 0);
-    io.emit('visitors', visitors);
+    io.emit('visitors', io.engine.clientsCount);
   });
 });
 

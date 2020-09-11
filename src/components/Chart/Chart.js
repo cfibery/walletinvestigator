@@ -1,20 +1,10 @@
 import React, { useState } from 'react';
 import { useSelector, shallowEqual } from 'react-redux';
 import { BarChart, Bar, XAxis, Tooltip, Legend } from 'recharts';
-import styled from 'styled-components';
 import { memoizedSorting } from './utils';
+import { sortingKeys } from '../Toolbar/Sorting';
 import CustomTooltip from './CustomTooltip';
 import HiddenTokens from './HiddenTokens';
-import Sorting, { sortingKeys } from './Sorting';
-import Filters from './Filters';
-
-const Toolbar = styled.div`
-  display: flex;
-  justify-content: space-between;
-  & > h6 {
-    margin: 0;
-  }
-`;
 
 function formatLegend(val) {
   return val
@@ -25,12 +15,12 @@ function formatLegend(val) {
 }
 
 function Chart({ data }) {
-  const { selected, sorting, filter, lastUpdate } = useSelector(
-    ({ selected, sorting, filter, lastUpdate }) => ({
+  const { selected, sorting, filter, mode } = useSelector(
+    ({ selected, sorting, filter, mode }) => ({
       selected,
       sorting,
       filter,
-      lastUpdate,
+      mode,
     }),
     shallowEqual
   );
@@ -48,16 +38,13 @@ function Chart({ data }) {
   );
   const width = window.visualViewport?.width || window.innerWidth;
   const height = window.visualViewport?.height || window.innerHeight;
-  const filteredData = memoizedSorting(data, filter, sorting)
+  const filteredData = memoizedSorting(data, filter, sorting, mode)
     .filter(
       (holding) =>
         !hiddenData[holding.address]?.hidden &&
         selected.every(({ address }) => address !== holding.address)
     )
     .slice(0, width < 768 ? 10 : 20);
-  const lastUpdateMinutes = Math.floor((Date.now() - lastUpdate) / (1000 * 60));
-  const lastUpdateMessage =
-    lastUpdateMinutes <= 1 ? 'Just now' : `${lastUpdateMinutes} minutes ago`;
   return (
     <div>
       {hasHiddenAddresses && (
@@ -83,11 +70,6 @@ function Chart({ data }) {
           }
         />
       </BarChart>
-      <Toolbar>
-        <Sorting />
-        <Filters />
-        <h6>Last updated: {lastUpdateMessage}</h6>
-      </Toolbar>
     </div>
   );
 }
