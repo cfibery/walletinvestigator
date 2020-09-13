@@ -87,7 +87,7 @@ function HoldingInfo({ symbol, address, marketCap, value, ...rest }) {
     <Wrapper>
       <h3>{symbol}</h3>
       <Address>{address}</Address>
-      <p>Market cap: ${formatNumber(marketCap)}</p>
+      <p>Market cap: {marketCap === 0 ? '?' : `$${formatNumber(marketCap)}`}</p>
       <p>{renderAdditionalInfo(sorting, rest)}</p>
       <p>
         <Value>Value: </Value>${formatNumber(value)}
