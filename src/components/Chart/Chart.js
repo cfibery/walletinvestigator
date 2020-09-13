@@ -47,7 +47,6 @@ function Chart({ data }) {
     )
     .slice(0, width < 768 ? 10 : 20);
   const dataKey = sortingKeys[sorting];
-  const includesNegative = filteredData.some((holding) => holding[dataKey] < 0);
   return (
     <div>
       {hasHiddenAddresses && (
@@ -76,7 +75,7 @@ function Chart({ data }) {
             <Cell
               key={`cell-${index}`}
               fill={
-                includesNegative
+                dataKey === 'balanceChange'
                   ? (entry[dataKey] > 0 && '#2ca02c') || '#d62728'
                   : '#8883d9'
               }
