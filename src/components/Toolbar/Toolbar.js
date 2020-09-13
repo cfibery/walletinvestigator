@@ -13,10 +13,16 @@ const Wrapper = styled.div`
   }
 `;
 
-const LastUpdateWrapper = styled.div`
-  display: none;
+const FiltersWrapper = styled.div`
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-gap: 20px;
+`;
+
+const ResponsiveWrapper = styled.div`
+  display: ${({ type }) => (type === 'mobile' ? 'grid' : 'none')};
   @media (min-width: 768px) {
-    display: block;
+    display: ${({ type }) => (type === 'mobile' ? 'none' : 'grid')};
   }
 `;
 
@@ -28,11 +34,18 @@ function Toolbar() {
   return (
     <Wrapper>
       <Sorting />
-      <Filters />
-      <ModeSwitcher />
-      <LastUpdateWrapper>
+      <ResponsiveWrapper type="mobile">
+        <Filters />
+      </ResponsiveWrapper>
+      <FiltersWrapper>
+        <ResponsiveWrapper type="desktop">
+          <Filters />
+        </ResponsiveWrapper>
+        <ModeSwitcher />
+      </FiltersWrapper>
+      <ResponsiveWrapper type="desktop">
         <h6>Last updated: {lastUpdateMessage}</h6>
-      </LastUpdateWrapper>
+      </ResponsiveWrapper>
     </Wrapper>
   );
 }
