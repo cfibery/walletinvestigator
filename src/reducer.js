@@ -3,7 +3,6 @@ import themes from './themes';
 
 const initialState = {
   loading: false,
-  queuePosition: 0,
   data: {},
   theme: themes.light,
   query: '',
@@ -29,9 +28,6 @@ export default function reducer(state = initialState, action) {
         break;
       case 'SET_LOADING':
         draft.loading = action.payload;
-        break;
-      case 'SET_QUEUE_POSITION':
-        draft.queuePosition = action.payload;
         break;
       case 'SET_DATA':
         draft.data[action.payload.address] = action.payload.data;

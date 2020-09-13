@@ -16,24 +16,49 @@ function combineData(data, mode) {
           wallet,
           [getKey('value')]: value,
           [getKey('balance')]: balance,
+          [getKey('balance24h')]: balance24h,
+          [getKey('balance7d')]: balance7d,
+          [getKey('price')]: price,
           [getKey('marketCap')]: marketCap,
           marketCap: tokenMarketCap,
           ...rest
         }
       ) => {
+        const ownershipPercentage =
+          marketCap > 0 ? (value / marketCap) * 100 : 0;
+        const walletData = {
+          address: wallet,
+          value,
+          ownershipPercentage,
+          balance,
+          balance24h,
+          balance7d,
+          balanceChange24h: getBalanceChange(
+            { balance, balance24h, price },
+            '24h'
+          ),
+          balanceChange7d: getBalanceChange(
+            { balance, balance7d, price },
+            '7d'
+          ),
+        };
+
         return {
           ...acc,
           [address]: {
             ...rest,
             address,
+            price,
             marketCap: tokenMarketCap,
             value: acc[address]?.value + value || value,
             balance: acc[address]?.balance + balance || balance,
-            wallets: acc[address]?.wallets.concat(wallet) || [wallet],
+            balance24h: acc[address]?.balance24h + balance24h || balance24h,
+            balance7d: acc[address]?.balance7d + balance7d || balance7d,
+            wallets: acc[address]?.wallets.concat(walletData) || [walletData],
             walletCount: acc[address]?.walletCount + 1 || 1,
             ownershipPercentage:
-              acc[address]?.ownershipPercentage + (value / marketCap) * 100 ||
-              (value / marketCap) * 100,
+              acc[address]?.ownershipPercentage + ownershipPercentage ||
+              ownershipPercentage,
           },
         };
       },
@@ -75,8 +100,29 @@ function sortByAggregate(data) {
     .sort((a, b) => b.aggregate - a.aggregate);
 }
 
-function sortByBalanceChange(data) {
-  return data.sort((a, b) => b.balanceChange - a.balanceChange);
+function getBalanceChange(holding, timeframe) {
+  let previousBalance = holding[`balance${timeframe}`];
+  if (previousBalance * holding.price < 1000) previousBalance = 0;
+  const balanceChange = holding.balance - previousBalance;
+  const valueChange = balanceChange * holding.price;
+  if (Math.abs(valueChange) < 1000) return 0;
+  if (previousBalance === 0) return 100;
+  const ret = (holding.balance / previousBalance - 1) * 100;
+  if (ret >= 695050784) debugger;
+  return ret;
+}
+
+function sortByBalanceChange(data, timeframe) {
+  return data
+    .reduce(
+      (acc, holding) =>
+        acc.concat({
+          ...holding,
+          balanceChange: getBalanceChange(holding, timeframe),
+        }),
+      []
+    )
+    .sort((a, b) => b.balanceChange - a.balanceChange);
 }
 
 function sortData(data, sorting) {
@@ -90,8 +136,9 @@ function sortData(data, sorting) {
       return sortByWallets(data);
     case 'aggregate':
       return sortByAggregate(data);
-    case 'sortByBalanceChange':
-      return sortByBalanceChange(data);
+    case '24h':
+    case '7d':
+      return sortByBalanceChange(data, sorting);
   }
 }
 

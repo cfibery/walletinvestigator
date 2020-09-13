@@ -13,15 +13,10 @@ const Wrapper = styled.div`
   }
 `;
 
-const ReloadButton = styled.button`
-  border: 0;
-  background: none;
-  padding: 0;
-  cursor: pointer;
-  color: ${({ theme }) => theme.color};
-  outline: none;
-  &:hover,
-  &:focus {
+const LastUpdateWrapper = styled.div`
+  display: none;
+  @media (min-width: 768px) {
+    display: block;
   }
 `;
 
@@ -35,10 +30,9 @@ function Toolbar() {
       <Sorting />
       <Filters />
       <ModeSwitcher />
-      <div>
+      <LastUpdateWrapper>
         <h6>Last updated: {lastUpdateMessage}</h6>
-        <ReloadButton>Force reload</ReloadButton>
-      </div>
+      </LastUpdateWrapper>
     </Wrapper>
   );
 }

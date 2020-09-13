@@ -7,6 +7,7 @@ import { faSearchDollar, faRunning } from '@fortawesome/free-solid-svg-icons';
 
 const Wrapper = styled.div`
   display: grid;
+  align-items: flex-start;
   & > h4 {
     margin: 0;
   }
@@ -14,13 +15,13 @@ const Wrapper = styled.div`
 
 const StyledSwitch = styled(Switch)`
   .svg-inline--fa {
-    transform: translateX(50%);
-  }
-  .fa-question {
     color: #fff;
+  }
+  .fa-search-dollar {
+    transform: translate(40%, 5%);
   }
   .fa-running {
-    color: #fff;
+    transform: translate(60%, 5%);
   }
 `;
 

@@ -9,7 +9,7 @@ const TooltipWrapper = styled.div`
   border: 1px solid #e4e4e4;
 `;
 
-function CustomTooltip({ active, payload, label }) {
+function CustomTooltip({ active, payload }) {
   if (active) {
     return (
       <TooltipWrapper>

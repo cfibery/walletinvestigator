@@ -7,7 +7,8 @@ import {
   faPercentage,
   faWallet,
   faFlask,
-  faBalanceScale,
+  faCalendarDay,
+  faCalendarWeek,
 } from '@fortawesome/free-solid-svg-icons';
 
 const Wrapper = styled.div`
@@ -19,17 +20,17 @@ const Wrapper = styled.div`
 
 const ButtonsWrapper = styled.div`
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: repeat(3, auto);
   grid-gap: 5px;
-  @media (min-width: 500px) {
-    display: block;
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(6, auto);
+    grid-gap: 10px;
   }
 `;
 
 const FilterButton = styled.button`
   padding: 10px;
   border: 0;
-  margin-right: 10px;
   outline: none;
   padding: 6px 12px;
   border-radius: 4px;
@@ -46,6 +47,8 @@ export const sortingKeys = {
   '%': 'ownershipPercentage',
   wallets: 'walletCount',
   aggregate: 'aggregate',
+  '24h': 'balanceChange',
+  '7d': 'balanceChange',
 };
 
 function Sorting() {
@@ -86,13 +89,18 @@ function Sorting() {
           <FontAwesomeIcon icon={faFlask} />
         </FilterButton>
         <FilterButton
-          title="Sort by percentage holdings change"
-          active={sorting === 'balanceChange'}
-          onClick={() =>
-            dispatch({ type: 'SET_SORTING', payload: 'balanceChange' })
-          }
+          title="Sort by percentage holdings change 24h"
+          active={sorting === '24h'}
+          onClick={() => dispatch({ type: 'SET_SORTING', payload: '24h' })}
         >
-          <FontAwesomeIcon icon={faBalanceScale} />
+          <FontAwesomeIcon icon={faCalendarDay} />
+        </FilterButton>
+        <FilterButton
+          title="Sort by percentage holdings change 7d"
+          active={sorting === '7d'}
+          onClick={() => dispatch({ type: 'SET_SORTING', payload: '7d' })}
+        >
+          <FontAwesomeIcon icon={faCalendarWeek} />
         </FilterButton>
       </ButtonsWrapper>
     </Wrapper>
