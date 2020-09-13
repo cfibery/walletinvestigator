@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, shallowEqual } from 'react-redux';
-import { BarChart, Bar, XAxis, Tooltip, Legend } from 'recharts';
+import { BarChart, Bar, Cell, XAxis, Tooltip, Legend } from 'recharts';
 import { memoizedSorting } from './utils';
 import { sortingKeys } from '../Toolbar/Sorting';
 import CustomTooltip from './CustomTooltip';
@@ -42,9 +42,12 @@ function Chart({ data }) {
     .filter(
       (holding) =>
         !hiddenData[holding.address]?.hidden &&
-        selected.every(({ address }) => address !== holding.address)
+        selected.every(({ address }) => address !== holding.address) &&
+        holding.balanceChange !== 0
     )
     .slice(0, width < 768 ? 10 : 20);
+  const dataKey = sortingKeys[sorting];
+  const includesNegative = filteredData.some((holding) => holding[dataKey] < 0);
   return (
     <div>
       {hasHiddenAddresses && (
@@ -63,12 +66,23 @@ function Chart({ data }) {
         <Tooltip content={<CustomTooltip />} />
         <Legend formatter={formatLegend} verticalAlign="top" />
         <Bar
-          dataKey={sortingKeys[sorting]}
+          dataKey={dataKey}
           fill="#8884d8"
           onClick={({ payload }) =>
             filteredData.length > 1 && updateHiddenData(payload, true)
           }
-        />
+        >
+          {filteredData.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={
+                includesNegative
+                  ? (entry[dataKey] > 0 && '#2ca02c') || '#d62728'
+                  : '#8883d9'
+              }
+            />
+          ))}
+        </Bar>
       </BarChart>
     </div>
   );
