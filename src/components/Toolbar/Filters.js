@@ -4,6 +4,7 @@ import styled from 'styled-components';
 
 const Wrapper = styled.div`
   display: grid;
+  align-items: flex-start;
   & > h4 {
     margin: 0;
   }
@@ -13,6 +14,7 @@ const Select = styled.select`
   width: 100px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  padding: 5px;
 `;
 
 function Filters() {

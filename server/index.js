@@ -11,34 +11,39 @@ const exchangeWallets = require('./exchangeWallets.json');
 const contracts = require('./contracts.json');
 const ApiCache = require('./apicache');
 const port = process.env.PORT || 4000;
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use('/', express.static('build'));
+
+const CACHE_MAX_AGE = 1000 * 60 * 60;
+const dataCache = new ApiCache(CACHE_MAX_AGE);
+const blacklist = ['0x0000000000000000000000000000000000000000']
+  .concat(exchangeWallets)
+  .concat(contracts);
 
 const client = new MongoClient(process.env.MONGO_URL, {
   useUnifiedTopology: true,
 });
-let topSearchesCollection;
+let topSearchesCollection, snapshotsCollection;
 async function initDb() {
   try {
     await client.connect();
-    const db = await client.db('whaleinspector');
+    const db = await client.db(process.env.DB_NAME);
     topSearchesCollection = await db.collection('topSearches');
+    snapshotsCollection = await db.collection('snapshots');
+    snapshotsCollection.createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 });
+    await snapshotsCollection
+      .find({}, { contractAddress: 1, timestamp: 1 })
+      .forEach(({ contractAddress, timestamp }) =>
+        dataCache.set(contractAddress, true, timestamp)
+      );
   } catch (err) {
     console.error(err);
   }
 }
 initDb();
 
-const walletCache = new ApiCache(1000 * 60 * 60 * 6);
-const dataCache = new ApiCache(1000 * 60 * 60 * 6);
-const blacklist = ['0x0000000000000000000000000000000000000000']
-  .concat(exchangeWallets)
-  .concat(contracts);
-
-// 133.33 -> ~7.5 requests / second
-const limiter = new Bottleneck({ minTime: 133.33 });
-const getEthplorerData = limiter.wrap(axios.get);
-const getCoinGeckoData = limiter.wrap(axios.get);
+const limiter = new Bottleneck({ minTime: 100, maxConcurrent: 1 });
+const wrappedAxiosGet = limiter.wrap(axios.get);
 
 function computeSearchScore(search, maxCount, maxTimestamp, now) {
   const countScore = search.count / maxCount;
@@ -104,145 +109,32 @@ app.get('/load-tokens', (_, res) => {
 });
 
 async function getRichAddresses(contractAddress) {
-  const { data } = await getEthplorerData(
-    `https://api.ethplorer.io/getTopTokenHolders/${contractAddress}?apiKey=${process.env.ETHPLORER_KEY}&limit=1000`
+  const { data } = await wrappedAxiosGet(
+    `https://api.bloxy.info/token/token_holders_list?token=${contractAddress}&limit=3000&key=${process.env.BLOXY_KEY}&format=structure`
   );
-  return data.holders.reduce(
-    (acc, { address }) =>
-      blacklist.includes(address) ? acc : acc.concat(address.toLowerCase()),
+  return data.reduce(
+    (acc, { address, address_type, annotation }) =>
+      blacklist.includes(address) || address_type !== 'Wallet' || annotation
+        ? acc
+        : acc.concat(address.toLowerCase()),
     []
   );
 }
 
-function toDecimal(num, decimals) {
-  return num * `1e-${decimals}`;
-}
-
-function reduceTokensToHoldings(
-  { tokens, address },
-  tokenPricesMap,
-  contractAddress
-) {
-  return tokens.reduce((acc, { tokenInfo, balance }) => {
-    const tokenAddress = tokenInfo.address.toLowerCase();
-    const decimalBalance = toDecimal(balance, tokenInfo.decimals);
-    const rate = tokenPricesMap[tokenAddress]?.usd;
-    const value = decimalBalance * rate || 0;
-    if (tokenAddress === contractAddress || value < 1000) return acc;
-    if (tokenPricesMap[tokenAddress]?.usd_24h_vol < 15000) return acc;
-
-    const marketCapUsd = tokenPricesMap[tokenAddress]?.usd_market_cap;
-    const dilutedMarketCapUsd =
-      toDecimal(tokenInfo.totalSupply, tokenInfo.decimals) * rate;
-    return acc.concat({
-      wallet: address.toLowerCase(),
-      address: tokenAddress,
-      name: tokenInfo.name,
-      symbol: tokenInfo.symbol,
-      balance: decimalBalance,
-      value,
-      marketCap: marketCapUsd || dilutedMarketCapUsd,
-    });
-  }, []);
-}
-
-function sliceArray(arr, len) {
-  return arr.reduce((resultArray, item, index) => {
-    const chunkIndex = Math.floor(index / len);
-    if (!resultArray[chunkIndex]) resultArray[chunkIndex] = []; // start a new chunk
-    resultArray[chunkIndex].push(item);
-    return resultArray;
-  }, []);
-}
-
-async function fetchCoinGeckoData(addressesInfo) {
-  const priceTokensMap = addressesInfo.reduce((acc, data) => {
-    if (!data) return acc;
-    data.tokens.forEach(({ tokenInfo }) => {
-      acc[tokenInfo.address.toLowerCase()] = true;
-    });
-    return acc;
-  }, {});
-  const addressSlices = sliceArray(Object.keys(priceTokensMap), 150); // 150 addresses is about the max the API can handle
-  let tokenPricesMap = {};
-  await Promise.all(
-    addressSlices.map(async (addressSlice) => {
-      const { data } = await getCoinGeckoData(
-        `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=${addressSlice}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`
-      );
-      tokenPricesMap = { ...tokenPricesMap, ...data };
-    })
-  );
-  return tokenPricesMap;
-}
-
-async function getHoldings(richAddresses, contractAddress) {
-  const addressesInfo = await Promise.all(
-    richAddresses.map(async (address) => {
-      if (walletCache.get(address)) return walletCache.get(address).payload;
-      const response = await getEthplorerData(
-        `https://api.ethplorer.io/getAddressInfo/${address}?apiKey=${process.env.ETHPLORER_KEY}`
-      );
-      if (!response.data?.tokens || !response.data?.address) {
-        console.error(`No tokens or address for ${address}`);
-        return null;
-      }
-      if (response.data.contractInfo) {
-        walletCache.set(address, null);
-        return null;
-      }
-      walletCache.set(address, response.data);
-      return response.data;
-    })
-  );
-
-  const tokenPricesMap = await fetchCoinGeckoData(addressesInfo);
-
-  return addressesInfo.reduce((acc, data) => {
-    if (!data) return acc;
-
-    return acc.concat(
-      reduceTokensToHoldings(data, tokenPricesMap, contractAddress)
-    );
-  }, []);
-}
-
-function filterHoldings(holdings) {
-  const aggregateMap = holdings.reduce(
-    (acc, { address, value }) => ({
-      ...acc,
-      [address]: {
-        wallets: acc[address]?.wallets + 1 || 1,
-        value: acc[address]?.value + value || value,
+function recordSnapshot(contractAddress, holdings, timestamp) {
+  snapshotsCollection.updateOne(
+    { contractAddress },
+    {
+      $set: {
+        expireAt: new Date(timestamp + CACHE_MAX_AGE),
+        contractAddress,
+        timestamp,
+        holdings,
       },
-    }),
-    {}
-  );
-  return holdings.filter(
-    ({ address }) =>
-      aggregateMap[address].wallets >= 5 && aggregateMap[address].value >= 10000
+    },
+    { upsert: true }
   );
 }
-
-let pending = false;
-async function performGenerate(contractAddress) {
-  pending = true;
-  try {
-    const richAddresses = await getRichAddresses(contractAddress);
-    const holdings = await getHoldings(richAddresses, contractAddress);
-    const filteredHoldings = filterHoldings(holdings);
-
-    dataCache.set(contractAddress, filteredHoldings);
-  } catch (err) {
-    dataCache.set(contractAddress, 'error');
-    console.error(err);
-  }
-  queue.shift();
-  pending = false;
-}
-setInterval(() => {
-  if (queue.length > 0 && !pending) performGenerate(queue[0]);
-}, 1000);
 
 async function recordSearch(name, symbol, address) {
   const document = await topSearchesCollection.findOne({ address });
@@ -262,32 +154,35 @@ async function recordSearch(name, symbol, address) {
   );
 }
 
-function makeLoadingPayload(contractAddress) {
-  return {
-    payload: 'loading',
-    queuePosition: queue.indexOf(contractAddress),
-    success: true,
-  };
-}
+app.get('/top-holders', async (req, res) => {
+  const contractAddress = req.query.address.toLowerCase();
+  const addresses = await getRichAddresses(contractAddress);
+  res.send({ payload: addresses, success: true });
+});
 
-const queue = [];
-app.post('/generate', (req, res) => {
+app.post('/cache-data', async (req, res) => {
   const contractAddress = req.body.address.toLowerCase();
-  const name = req.body.name;
-  const symbol = req.body.symbol;
-  if (dataCache.get(contractAddress)?.payload === 'error') {
-    dataCache.delete(contractAddress);
-    return res.send({ success: false });
-  }
+  const data = req.body.data;
+  const now = Date.now();
+  recordSnapshot(contractAddress, data, now);
+  dataCache.set(contractAddress, true, now);
+  res.send({ timestamp: now, success: true });
+});
+
+app.get('/data', async (req, res) => {
+  const contractAddress = req.query.address.toLowerCase();
+  const name = req.query.name;
+  const symbol = req.query.symbol;
   if (dataCache.get(contractAddress)) {
     recordSearch(name, symbol, contractAddress);
-    return res.send({ ...dataCache.get(contractAddress), success: true });
+    const data = await snapshotsCollection.findOne({ contractAddress });
+    return res.send({
+      payload: data.holdings,
+      timestamp: data.timestamp,
+      success: true,
+    });
   }
-  if (queue.includes(contractAddress)) {
-    return res.send(makeLoadingPayload(contractAddress));
-  }
-  queue.push(contractAddress);
-  res.send(makeLoadingPayload(contractAddress));
+  res.send({ success: false });
 });
 
 app.get('*', (_, res) => {
@@ -296,14 +191,10 @@ app.get('*', (_, res) => {
 
 // Sockets
 
-let visitors = 0;
-
 io.on('connection', (socket) => {
-  visitors++;
-  io.emit('visitors', visitors);
+  io.emit('visitors', io.engine.clientsCount);
   socket.on('disconnect', () => {
-    visitors = Math.max(visitors - 1, 0);
-    io.emit('visitors', visitors);
+    io.emit('visitors', io.engine.clientsCount);
   });
 });
 

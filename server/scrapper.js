@@ -7,7 +7,12 @@
 // Profit
 
 // CONTRACTS
-// Go there https://etherscan.io/accounts/label/token-contract?subcatid=0&size=3200&start=0&col=1&order=asc
+// Go to these addresses
+// https://etherscan.io/accounts/label/token-contract?subcatid=0&size=3200&start=0&col=1&order=asc
+// https://etherscan.io/accounts/label/proxy-contract?subcatid=undefined&size=100&start=0&col=1&order=asc
+// https://etherscan.io/accounts/label/loans
+// https://etherscan.io/accounts/label/aave
+// https://etherscan.io/accounts/label/trading
 // Open console and run the following
 // JSON.stringify([...$('td a')].map(a => a.textContent.toLowerCase()))
 // Copy paste into contracts.json

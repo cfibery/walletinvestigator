@@ -7,6 +7,7 @@ import {
   Loading,
   ThemeButton,
   VisitorsCounter,
+  Toolbar,
 } from './components';
 import './App.css';
 
@@ -50,7 +51,12 @@ function App() {
         {loading ? (
           <Loading />
         ) : (
-          (Object.keys(data).length > 0 && <Chart data={data} />) || <div />
+          Object.keys(data).length > 0 && (
+            <>
+              <Chart data={data} />
+              <Toolbar />
+            </>
+          )
         )}
         <Footer>
           <VisitorsCounter />

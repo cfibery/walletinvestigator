@@ -22,7 +22,11 @@ const Value = styled.span`
   color: #2196f3;
 `;
 
-function formatNumber(value) {
+const BalanceChange = styled.span`
+  color: ${({ change }) => (change >= 0 ? 'green' : 'red')};
+`;
+
+export function formatNumber(value) {
   if (value < 1) return value;
   return new Intl.NumberFormat(navigator.language).format(Math.floor(value));
 }
@@ -61,6 +65,17 @@ function renderAdditionalInfo(sorting, data) {
         <>
           <Additional>Score: </Additional>
           {data.aggregate.toFixed(2)}
+        </>
+      );
+    case '24h':
+    case '7d':
+      return (
+        <>
+          <Additional>Change: </Additional>
+          <BalanceChange change={data.balanceChange}>
+            {data.balanceChange.toFixed(2)}
+          </BalanceChange>
+          %
         </>
       );
   }
