@@ -85,15 +85,6 @@ function Sorting() {
         >
           <FontAwesomeIcon icon={faFlask} />
         </FilterButton>
-        <FilterButton
-          title="Sort by percentage holdings change"
-          active={sorting === 'balanceChange'}
-          onClick={() =>
-            dispatch({ type: 'SET_SORTING', payload: 'balanceChange' })
-          }
-        >
-          <FontAwesomeIcon icon={faBalanceScale} />
-        </FilterButton>
       </ButtonsWrapper>
     </Wrapper>
   );

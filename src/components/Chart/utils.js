@@ -75,10 +75,6 @@ function sortByAggregate(data) {
     .sort((a, b) => b.aggregate - a.aggregate);
 }
 
-function sortByBalanceChange(data) {
-  return data.sort((a, b) => b.balanceChange - a.balanceChange);
-}
-
 function sortData(data, sorting) {
   switch (sorting) {
     case '$':
@@ -90,8 +86,6 @@ function sortData(data, sorting) {
       return sortByWallets(data);
     case 'aggregate':
       return sortByAggregate(data);
-    case 'sortByBalanceChange':
-      return sortByBalanceChange(data);
   }
 }
 

@@ -102,7 +102,7 @@ async function getCmcTokens() {
   }
 }
 setInterval(getCmcTokens, 1000 * 60 * 60 * 12); // get coins every 12 hours
-// getCmcTokens(); // initial call
+getCmcTokens(); // initial call
 
 app.get('/load-tokens', (_, res) => {
   const payload = cmcTokens.map((token) => ({
@@ -114,7 +114,7 @@ app.get('/load-tokens', (_, res) => {
 
 async function getRichAddresses(contractAddress) {
   const { data } = await getEthplorerData(
-    `https://api.ethplorer.io/getTopTokenHolders/${contractAddress}?apiKey=${process.env.ETHPLORER_KEY}&limit=100`
+    `https://api.ethplorer.io/getTopTokenHolders/${contractAddress}?apiKey=${process.env.ETHPLORER_KEY}&limit=1000`
   );
   return data.holders.reduce(
     (acc, { address }) =>
@@ -239,58 +239,17 @@ function filterHoldings(holdings) {
   );
   return holdings.filter(
     ({ address }) =>
-      aggregateMap[address].wallets >= 1 && aggregateMap[address].value >= 1000
+      aggregateMap[address].wallets >= 5 && aggregateMap[address].value >= 10000
   );
 }
 
 async function recordSnapshot(contractAddress, holdings, timestamp) {
-  const document = await snapshotsCollection.findOne({ contractAddress });
-  // let { timestamp24h, timestamp7d, timestamp30d } = document || {};
-  if (document) {
-    holdings = holdings.map((holding) => {
-      const previous = document.holdings.find(
-        ({ address }) => address === holding.address
-      );
-      const balanceChange = previous?.balance
-        ? (holding.balance * 100) / previous.balance - 100
-        : 0;
-      // let { balanceChange24h, balanceChange7d, balanceChange30d } = previous;
-      // if (timestamp - timestamp24h >= 1000 * 60 * 60 * 24) {
-      //   balanceChange24h = previous?.balance24h
-      //     ? (holding.balance / previous.balance24h) * 100
-      //     : 0;
-      //   timestamp24h = timestamp;
-      // }
-      // if (timestamp - timestamp7d >= 1000 * 60 * 60 * 24 * 7) {
-      //   balanceChange7d = previous?.balance7d
-      //     ? (holding.balance / previous.balance7d) * 100
-      //     : 0;
-      //   timestamp7d = timestamp;
-      // }
-      // if (timestamp - timestamp30d >= 1000 * 60 * 60 * 24 * 30) {
-      //   balanceChange30d = previous?.balance30d
-      //     ? (holding.balance / previous.balance30d) * 100
-      //     : 0;
-      //   timestamp30d = timestamp;
-      // }
-      return {
-        ...holding,
-        balanceChange,
-        // balanceChange24h,
-        // balanceChange7d,
-        // balanceChange30d,
-      };
-    });
-  }
   snapshotsCollection.updateOne(
     { contractAddress },
     {
       $set: {
         contractAddress,
         timestamp,
-        // timestamp24h,
-        // timestamp7d,
-        // timestamp30d,
         holdings,
       },
     },
