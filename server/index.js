@@ -106,7 +106,7 @@ app.get('/load-tokens', (_, res) => {
 
 async function getRichAddresses(contractAddress) {
   const { data } = await wrappedAxiosGet(
-    `https://api.bloxy.info/token/token_holders_list?token=${contractAddress}&limit=2000&key=${process.env.BLOXY_KEY}&format=structure`
+    `https://api.bloxy.info/token/token_holders_list?token=${contractAddress}&limit=1000&key=${process.env.BLOXY_KEY}&format=structure`
   );
   return data.reduce(
     (acc, { address, address_type, annotation }) =>
