@@ -14,7 +14,8 @@ const Wrapper = styled.div`
   }
   h4 {
     margin: 0;
-    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-bottom: 10px;
   }
 `;
 

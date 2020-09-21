@@ -9,6 +9,7 @@ const initialState = {
   query: '',
   selected: [],
   sorting: '$',
+  reverse: false,
   filter: 'all',
   mode: 'follow',
   lastUpdate: '',
@@ -41,6 +42,9 @@ export default function reducer(state = initialState, action) {
         break;
       case 'SET_SORTING':
         draft.sorting = action.payload;
+        break;
+      case 'TOGGLE_REVERSE':
+        draft.reverse = !state.reverse;
         break;
       case 'SET_FILTER':
         draft.filter = action.payload;

@@ -16,12 +16,13 @@ function formatLegend(val) {
 }
 
 function Chart({ data }) {
-  const { selected, sorting, filter, mode } = useSelector(
-    ({ selected, sorting, filter, mode }) => ({
+  const { selected, sorting, filter, mode, reverse } = useSelector(
+    ({ selected, sorting, filter, mode, reverse }) => ({
       selected,
       sorting,
       filter,
       mode,
+      reverse,
     }),
     shallowEqual
   );
@@ -39,14 +40,14 @@ function Chart({ data }) {
   );
   const width = window.visualViewport?.width || window.innerWidth;
   const height = window.visualViewport?.height || window.innerHeight;
-  const filteredData = memoizedSorting(data, filter, sorting, mode)
-    .filter(
-      (holding) =>
-        !hiddenData[holding.address]?.hidden &&
-        selected.every(({ address }) => address !== holding.address) &&
-        holding.balanceChange !== 0
-    )
-    .slice(0, width < 768 ? 10 : 20);
+  let filteredData = memoizedSorting(data, filter, sorting, mode).filter(
+    (holding) =>
+      !hiddenData[holding.address]?.hidden &&
+      selected.every(({ address }) => address !== holding.address) &&
+      holding.balanceChange !== 0
+  );
+  filteredData = reverse ? filteredData.reverse() : filteredData;
+  filteredData = filteredData.slice(0, width < 768 ? 10 : 20);
   const dataKey = sortingKeys[sorting];
   return (
     <div>

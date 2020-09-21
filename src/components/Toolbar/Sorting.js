@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -9,9 +9,28 @@ import {
   faFlask,
   faCalendarDay,
   faCalendarWeek,
+  faExchangeAlt,
 } from '@fortawesome/free-solid-svg-icons';
 
 const Wrapper = styled.div``;
+
+const HeadingWrapper = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const ReverseButton = styled.button`
+  border: 0;
+  background: 0;
+  margin-bottom: 5px;
+  cursor: pointer;
+  color: ${({ theme, active }) => (active ? '#ff9800' : theme.color)};
+  outline: none;
+  &:hover,
+  &:focus {
+    color: #ff9800;
+  }
+`;
 
 const ButtonsWrapper = styled.div`
   display: grid;
@@ -47,11 +66,22 @@ export const sortingKeys = {
 };
 
 function Sorting() {
-  const sorting = useSelector(({ sorting }) => sorting);
+  const { sorting, reverse } = useSelector(
+    ({ sorting, reverse }) => ({ sorting, reverse }),
+    shallowEqual
+  );
   const dispatch = useDispatch();
   return (
     <Wrapper>
-      <h4>Sorting</h4>
+      <HeadingWrapper>
+        <h4>Sorting</h4>
+        <ReverseButton
+          onClick={() => dispatch({ type: 'TOGGLE_REVERSE' })}
+          active={reverse}
+        >
+          <FontAwesomeIcon icon={faExchangeAlt} />
+        </ReverseButton>
+      </HeadingWrapper>
       <ButtonsWrapper>
         <FilterButton
           title="Sort by total $ value"
