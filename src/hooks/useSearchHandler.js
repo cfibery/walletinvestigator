@@ -118,8 +118,6 @@ function appendBalanceHistory(balance, historyData, i) {
   let balance24h, balance7d;
   if (!found) {
     balance24h = balance7d = 0;
-  } else if (found.history.length === 0) {
-    balance24h = balance7d = balance.value;
   } else {
     const { history } = found;
     const yesterday = new Date();
@@ -135,7 +133,7 @@ function appendBalanceHistory(balance, historyData, i) {
   }
 
   return {
-    ...balance,
+    currency: balance.currency,
     balance: balance.value,
     balance24h,
     balance7d,
@@ -150,6 +148,7 @@ async function fetchBalances(addresses) {
     addressSlices.map(async (addressSlice) => {
       const { data: holdingsData } = await queryHoldings(addressSlice);
       const { data: historyData } = await queryHistory(addressSlice, lastBlock);
+
       const data = holdingsData.ethereum.address.map(
         ({ balances, address, smartContract }, i) => ({
           address,
@@ -202,11 +201,11 @@ function reduceTokensToHoldings(
     ({ currency }) => currency.address.toLowerCase() === contractAddress
   );
   return balances.reduce(
-    (acc, { currency, value: balance, balance24h, balance7d }) => {
+    (acc, { currency, balance, balance24h, balance7d }) => {
       const tokenAddress = currency.address.toLowerCase();
       const rate = tokenPricesMap[tokenAddress]?.usd;
       const value = balance * rate || 0;
-      if (tokenAddress === contractAddress || value < 1000) return acc;
+      if (tokenAddress === contractAddress || value < 500) return acc;
       if (tokenPricesMap[tokenAddress]?.usd_24h_vol < 15000) return acc;
 
       const marketCap = tokenPricesMap[tokenAddress]?.usd_market_cap || 0;
@@ -277,15 +276,20 @@ function filterHoldings(holdings) {
   );
 }
 
+const LOADING_STEPS = 6;
 export default function useSearchHandler() {
   const { selected } = useSelector(({ selected }) => ({ selected }));
   const dispatch = useDispatch();
+  const updateLoadingProgress = (value, message) =>
+    dispatch({ type: 'SET_LOADING_PROGRESS', payload: { value, message } });
+
   return async ({ name, symbol, address }) => {
     address = address.toLowerCase();
     dispatch({ type: 'SET_QUERY', payload: '' });
     if (selected.find((token) => token.address === address)) return;
 
     dispatch({ type: 'SET_LOADING', payload: true });
+    updateLoadingProgress(1 / LOADING_STEPS, 'Fetching cache...');
     const { payload, timestamp, success } = await fetchCache({
       name,
       symbol,
@@ -293,6 +297,7 @@ export default function useSearchHandler() {
     });
 
     const finish = (data, timestamp) => {
+      updateLoadingProgress(1, '');
       batch(() => {
         dispatch({ type: 'ADD_SELECTED', payload: { name, symbol, address } });
         dispatch({ type: 'SET_LOADING', payload: false });
@@ -302,13 +307,17 @@ export default function useSearchHandler() {
     };
 
     if (success) return finish(payload, timestamp);
+    updateLoadingProgress(2 / LOADING_STEPS, 'Fetching top holders...');
     const addresses = await getTopHolders(address);
+    updateLoadingProgress(3 / LOADING_STEPS, 'Fetching balances...');
     const balances = await fetchBalances(addresses);
+    updateLoadingProgress(4 / LOADING_STEPS, 'Fetching prices...');
     const tokenPricesMap = await fetchPrices(balances);
     const holdings = balances.reduce((acc, data) => {
       return acc.concat(reduceTokensToHoldings(data, tokenPricesMap, address));
     }, []);
     const filteredHoldings = filterHoldings(holdings);
+    updateLoadingProgress(5 / LOADING_STEPS, 'Saving to cache...');
     const cacheTimestamp = await cacheData(address, filteredHoldings);
     finish(filteredHoldings, cacheTimestamp);
   };

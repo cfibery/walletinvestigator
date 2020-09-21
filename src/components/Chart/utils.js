@@ -102,14 +102,12 @@ function sortByAggregate(data) {
 
 function getBalanceChange(holding, timeframe) {
   let previousBalance = holding[`balance${timeframe}`];
-  if (previousBalance * holding.price < 1000) previousBalance = 0;
+  if (previousBalance * holding.price < 500) previousBalance = 0;
   const balanceChange = holding.balance - previousBalance;
   const valueChange = balanceChange * holding.price;
-  if (Math.abs(valueChange) < 1000) return 0;
+  if (Math.abs(valueChange) < 500) return 0;
   if (previousBalance === 0) return 100;
-  const ret = (holding.balance / previousBalance - 1) * 100;
-  if (ret >= 695050784) debugger;
-  return ret;
+  return (holding.balance / previousBalance - 1) * 100;
 }
 
 function sortByBalanceChange(data, timeframe) {

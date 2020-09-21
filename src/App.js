@@ -7,7 +7,6 @@ import {
   Loading,
   ThemeButton,
   VisitorsCounter,
-  Toolbar,
 } from './components';
 import './App.css';
 
@@ -54,7 +53,6 @@ function App() {
           Object.keys(data).length > 0 && (
             <>
               <Chart data={data} />
-              <Toolbar />
             </>
           )
         )}

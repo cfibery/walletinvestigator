@@ -7,8 +7,7 @@ const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const MongoClient = require('mongodb').MongoClient;
 const Bottleneck = require('bottleneck');
-const exchangeWallets = require('./exchangeWallets.json');
-const contracts = require('./contracts.json');
+const blacklist = require('./blacklist.json');
 const ApiCache = require('./apicache');
 const port = process.env.PORT || 4000;
 app.use(bodyParser.json({ limit: '50mb' }));
@@ -16,9 +15,6 @@ app.use('/', express.static('build'));
 
 const CACHE_MAX_AGE = 1000 * 60 * 60;
 const dataCache = new ApiCache(CACHE_MAX_AGE);
-const blacklist = ['0x0000000000000000000000000000000000000000']
-  .concat(exchangeWallets)
-  .concat(contracts);
 
 const client = new MongoClient(process.env.MONGO_URL, {
   useUnifiedTopology: true,
@@ -110,7 +106,7 @@ app.get('/load-tokens', (_, res) => {
 
 async function getRichAddresses(contractAddress) {
   const { data } = await wrappedAxiosGet(
-    `https://api.bloxy.info/token/token_holders_list?token=${contractAddress}&limit=3000&key=${process.env.BLOXY_KEY}&format=structure`
+    `https://api.bloxy.info/token/token_holders_list?token=${contractAddress}&limit=2000&key=${process.env.BLOXY_KEY}&format=structure`
   );
   return data.reduce(
     (acc, { address, address_type, annotation }) =>

@@ -3,6 +3,7 @@ import themes from './themes';
 
 const initialState = {
   loading: false,
+  loadingProgress: { value: 0, message: '' },
   data: {},
   theme: themes.light,
   query: '',
@@ -28,6 +29,9 @@ export default function reducer(state = initialState, action) {
         break;
       case 'SET_LOADING':
         draft.loading = action.payload;
+        break;
+      case 'SET_LOADING_PROGRESS':
+        draft.loadingProgress = action.payload;
         break;
       case 'SET_DATA':
         draft.data[action.payload.address] = action.payload.data;

@@ -8,8 +8,13 @@ import ModeSwitcher from './ModeSwitcher';
 const Wrapper = styled.div`
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   h6 {
     margin: 0;
+  }
+  h4 {
+    margin: 0;
+    margin-bottom: 5px;
   }
 `;
 

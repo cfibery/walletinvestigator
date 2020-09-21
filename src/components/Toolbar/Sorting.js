@@ -11,12 +11,7 @@ import {
   faCalendarWeek,
 } from '@fortawesome/free-solid-svg-icons';
 
-const Wrapper = styled.div`
-  & > h4 {
-    margin: 0;
-    margin-bottom: 5px;
-  }
-`;
+const Wrapper = styled.div``;
 
 const ButtonsWrapper = styled.div`
   display: grid;

@@ -5,6 +5,7 @@ import { memoizedSorting } from './utils';
 import { sortingKeys } from '../Toolbar/Sorting';
 import CustomTooltip from './CustomTooltip';
 import HiddenTokens from './HiddenTokens';
+import Toolbar from '../Toolbar';
 
 function formatLegend(val) {
   return val
@@ -76,13 +77,14 @@ function Chart({ data }) {
               key={`cell-${index}`}
               fill={
                 dataKey === 'balanceChange'
-                  ? (entry[dataKey] > 0 && '#2ca02c') || '#d62728'
+                  ? (entry[dataKey] > 0 && '#4caf50') || '#f44336'
                   : '#8883d9'
               }
             />
           ))}
         </Bar>
       </BarChart>
+      <Toolbar />
     </div>
   );
 }
