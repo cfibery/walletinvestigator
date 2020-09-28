@@ -5,6 +5,7 @@
 // https://etherscan.io/accounts/label/loans
 // https://etherscan.io/accounts/label/aave
 // https://etherscan.io/accounts/label/trading
+// https://etherscan.io/accounts/label/heist
 // Open console and run the following
 // JSON.stringify([...$('td a')].map(a => a.textContent.toLowerCase()))
 // Copy paste into blacklist.json
