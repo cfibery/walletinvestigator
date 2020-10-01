@@ -24,7 +24,7 @@ function combineData(data, mode, ignoreList) {
           ...rest
         }
       ) => {
-        if (ignoreList.addresses.some(({ address }) => address === wallet)) {
+        if (ignoreList.addresses?.some(({ address }) => address === wallet)) {
           return acc;
         }
         const ownershipPercentage =
