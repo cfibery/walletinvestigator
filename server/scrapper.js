@@ -8,6 +8,6 @@
 // https://etherscan.io/accounts/label/heist
 // Open console and run the following
 // JSON.stringify([...$('td a')].map(a => a.textContent.toLowerCase()))
-// Copy paste into blacklist.json
-// Run [...new Set(array)] where array is the blacklist array to remove potential duplicates
+// Copy paste into ignoreList.json
+// Run [...new Set(array)] where array is the ignoreList array to remove potential duplicates
 // Profit

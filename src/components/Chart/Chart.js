@@ -16,13 +16,14 @@ function formatLegend(val) {
 }
 
 function Chart({ data }) {
-  const { selected, sorting, filter, mode, reverse } = useSelector(
-    ({ selected, sorting, filter, mode, reverse }) => ({
+  const { selected, sorting, filter, mode, reverse, ignoreList } = useSelector(
+    ({ selected, sorting, filter, mode, reverse, ignoreList }) => ({
       selected,
       sorting,
       filter,
       mode,
       reverse,
+      ignoreList,
     }),
     shallowEqual
   );
@@ -40,7 +41,13 @@ function Chart({ data }) {
   );
   const width = window.visualViewport?.width || window.innerWidth;
   const height = window.visualViewport?.height || window.innerHeight;
-  let filteredData = memoizedSorting(data, filter, sorting, mode).filter(
+  let filteredData = memoizedSorting(
+    data,
+    filter,
+    sorting,
+    mode,
+    ignoreList
+  ).filter(
     (holding) =>
       !hiddenData[holding.address]?.hidden &&
       selected.every(({ address }) => address !== holding.address) &&

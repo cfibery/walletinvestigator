@@ -13,6 +13,7 @@ const initialState = {
   filter: 'all',
   mode: 'follow',
   lastUpdate: '',
+  ignoreList: {},
 };
 
 export default function reducer(state = initialState, action) {
@@ -54,6 +55,9 @@ export default function reducer(state = initialState, action) {
         break;
       case 'SET_LAST_UPDATE':
         draft.lastUpdate = action.payload;
+        break;
+      case 'SET_IGNORE_LIST':
+        draft.ignoreList = action.payload;
         break;
       default:
         break;

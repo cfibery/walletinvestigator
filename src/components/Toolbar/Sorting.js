@@ -11,6 +11,7 @@ import {
   faCalendarWeek,
   faExchangeAlt,
 } from '@fortawesome/free-solid-svg-icons';
+import Button from '../Button';
 
 const Wrapper = styled.div``;
 
@@ -42,20 +43,6 @@ const ButtonsWrapper = styled.div`
   }
 `;
 
-const FilterButton = styled.button`
-  padding: 10px;
-  border: 0;
-  outline: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: ${({ active }) => (active ? '#ff9800' : 'black')};
-  &:hover,
-  &:focus {
-    color: #ff9800;
-  }
-`;
-
 export const sortingKeys = {
   $: 'value',
   '%': 'ownershipPercentage',
@@ -83,28 +70,28 @@ function Sorting() {
         </ReverseButton>
       </HeadingWrapper>
       <ButtonsWrapper>
-        <FilterButton
+        <Button
           title="Sort by total $ value"
           active={sorting === '$'}
           onClick={() => dispatch({ type: 'SET_SORTING', payload: '$' })}
         >
           <FontAwesomeIcon icon={faDollarSign} />
-        </FilterButton>
-        <FilterButton
+        </Button>
+        <Button
           title="Sort by market cap % ownership"
           active={sorting === '%'}
           onClick={() => dispatch({ type: 'SET_SORTING', payload: '%' })}
         >
           <FontAwesomeIcon icon={faPercentage} />
-        </FilterButton>
-        <FilterButton
+        </Button>
+        <Button
           title="Sort by wallet count"
           active={sorting === 'wallets'}
           onClick={() => dispatch({ type: 'SET_SORTING', payload: 'wallets' })}
         >
           <FontAwesomeIcon icon={faWallet} />
-        </FilterButton>
-        <FilterButton
+        </Button>
+        <Button
           title="Sort by aggregated value and wallet count"
           active={sorting === 'aggregate'}
           onClick={() =>
@@ -112,21 +99,21 @@ function Sorting() {
           }
         >
           <FontAwesomeIcon icon={faFlask} />
-        </FilterButton>
-        <FilterButton
+        </Button>
+        <Button
           title="Sort by percentage holdings change 24h"
           active={sorting === '24h'}
           onClick={() => dispatch({ type: 'SET_SORTING', payload: '24h' })}
         >
           <FontAwesomeIcon icon={faCalendarDay} />
-        </FilterButton>
-        <FilterButton
+        </Button>
+        <Button
           title="Sort by percentage holdings change 7d"
           active={sorting === '7d'}
           onClick={() => dispatch({ type: 'SET_SORTING', payload: '7d' })}
         >
           <FontAwesomeIcon icon={faCalendarWeek} />
-        </FilterButton>
+        </Button>
       </ButtonsWrapper>
     </Wrapper>
   );

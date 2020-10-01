@@ -4,7 +4,7 @@ function prependSearched(str) {
   return `searched${str[0].toUpperCase()}${str.slice(1)}`;
 }
 
-function combineData(data, mode) {
+function combineData(data, mode, ignoreList) {
   const getKey = (str) => (mode === 'follow' ? str : prependSearched(str));
   const dataMap = Object.values(data)
     .reduce((prev, next) => prev.concat(next)) // flatten
@@ -24,6 +24,9 @@ function combineData(data, mode) {
           ...rest
         }
       ) => {
+        if (ignoreList.addresses.some(({ address }) => address === wallet)) {
+          return acc;
+        }
         const ownershipPercentage =
           marketCap > 0 ? (value / marketCap) * 100 : 0;
         const walletData = {
@@ -145,8 +148,8 @@ function filterData(data, filter) {
   return data.filter((holding) => holding.marketCap < Number(filter) * 1000000);
 }
 
-function combineAndSort(data, filter, sorting, mode) {
-  const combinedData = combineData(data, mode);
+function combineAndSort(data, filter, sorting, mode, ignoreList) {
+  const combinedData = combineData(data, mode, ignoreList);
   const filteredData = filterData(combinedData, filter);
   return sortData(filteredData, sorting);
 }

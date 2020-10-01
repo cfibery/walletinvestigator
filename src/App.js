@@ -5,7 +5,7 @@ import {
   Search,
   Chart,
   Loading,
-  ThemeButton,
+  Settings,
   VisitorsCounter,
 } from './components';
 import './App.css';
@@ -61,7 +61,7 @@ function App() {
           <DiscordLink href="https://discord.gg/pHcSxs3" target="_blank">
             Discord
           </DiscordLink>
-          <ThemeButton />
+          <Settings />
         </Footer>
       </Wrapper>
     </ThemeProvider>

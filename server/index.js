@@ -5,38 +5,17 @@ const axios = require('axios');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
-const MongoClient = require('mongodb').MongoClient;
 const Bottleneck = require('bottleneck');
-const blacklist = require('./blacklist.json');
-const ApiCache = require('./apicache');
+const ignoreList = require('./ignoreList.json');
+const db = require('./db');
 const port = process.env.PORT || 4000;
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use('/', express.static('build'));
 
-const CACHE_MAX_AGE = 1000 * 60 * 60;
-const dataCache = new ApiCache(CACHE_MAX_AGE);
-
-const client = new MongoClient(process.env.MONGO_URL, {
-  useUnifiedTopology: true,
-});
-let topSearchesCollection, snapshotsCollection;
-async function initDb() {
-  try {
-    await client.connect();
-    const db = await client.db(process.env.DB_NAME);
-    topSearchesCollection = await db.collection('topSearches');
-    snapshotsCollection = await db.collection('snapshots');
-    snapshotsCollection.createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 });
-    await snapshotsCollection
-      .find({}, { contractAddress: 1, timestamp: 1 })
-      .forEach(({ contractAddress, timestamp }) =>
-        dataCache.set(contractAddress, true, timestamp)
-      );
-  } catch (err) {
-    console.error(err);
-  }
+async function initClient() {
+  db.client = await db.init();
 }
-initDb();
+initClient();
 
 const limiter = new Bottleneck({ minTime: 100, maxConcurrent: 1 });
 const wrappedAxiosGet = limiter.wrap(axios.get);
@@ -50,7 +29,7 @@ function computeSearchScore(search, maxCount, maxTimestamp, now) {
 }
 
 app.get('/top-searches', async (_, res) => {
-  const topSearches = await topSearchesCollection.find().toArray();
+  const topSearches = await db.client.topSearches.find().toArray();
   const [maxCount, maxTimestamp] = topSearches.reduce(
     (acc, { count, timestamp }) => [
       !acc[0] || acc[0] < count ? count : acc[0],
@@ -65,7 +44,10 @@ app.get('/top-searches', async (_, res) => {
       (a, b) => computeSearchScore(b, ...args) - computeSearchScore(a, ...args)
     )
     .slice(0, 20)
-    .map((search) => ({ ...search, ready: !!dataCache.get(search.address) }));
+    .map((search) => ({
+      ...search,
+      ready: !!db.cache.get(search.address),
+    }));
   res.send({ payload: sortedSearches });
 });
 
@@ -99,7 +81,7 @@ getCmcTokens(); // initial call
 app.get('/load-tokens', (_, res) => {
   const payload = cmcTokens.map((token) => ({
     ...token,
-    ready: !!dataCache.get(token.address),
+    ready: !!db.cache.get(token.address),
   }));
   res.send({ payload, success: true });
 });
@@ -110,43 +92,10 @@ async function getRichAddresses(contractAddress) {
   );
   return data.reduce(
     (acc, { address, address_type, annotation }) =>
-      blacklist.includes(address) || address_type !== 'Wallet' || annotation
+      ignoreList.includes(address) || address_type !== 'Wallet' || annotation
         ? acc
         : acc.concat(address.toLowerCase()),
     []
-  );
-}
-
-function recordSnapshot(contractAddress, holdings, timestamp) {
-  snapshotsCollection.updateOne(
-    { contractAddress },
-    {
-      $set: {
-        expireAt: new Date(timestamp + CACHE_MAX_AGE),
-        contractAddress,
-        timestamp,
-        holdings,
-      },
-    },
-    { upsert: true }
-  );
-}
-
-async function recordSearch(name, symbol, address) {
-  const document = await topSearchesCollection.findOne({ address });
-
-  topSearchesCollection.updateOne(
-    { address },
-    {
-      $set: {
-        name,
-        symbol,
-        address,
-        count: document ? document.count + 1 : 1,
-        timestamp: Date.now(),
-      },
-    },
-    { upsert: true }
   );
 }
 
@@ -160,8 +109,8 @@ app.post('/cache-data', async (req, res) => {
   const contractAddress = req.body.address.toLowerCase();
   const data = req.body.data;
   const now = Date.now();
-  recordSnapshot(contractAddress, data, now);
-  dataCache.set(contractAddress, true, now);
+  db.recordSnapshot(db.client, contractAddress, data, now);
+  db.cache.set(contractAddress, true, now);
   res.send({ timestamp: now, success: true });
 });
 
@@ -169,9 +118,9 @@ app.get('/data', async (req, res) => {
   const contractAddress = req.query.address.toLowerCase();
   const name = req.query.name;
   const symbol = req.query.symbol;
-  if (dataCache.get(contractAddress)) {
-    recordSearch(name, symbol, contractAddress);
-    const data = await snapshotsCollection.findOne({ contractAddress });
+  if (db.cache.get(contractAddress)) {
+    db.recordSearch(db.client, name, symbol, contractAddress);
+    const data = await db.client.snapshots.findOne({ contractAddress });
     return res.send({
       payload: data.holdings,
       timestamp: data.timestamp,
@@ -179,6 +128,45 @@ app.get('/data', async (req, res) => {
     });
   }
   res.send({ success: false });
+});
+
+app.get('/load-ignore-list', async (req, res) => {
+  const { listName } = req.query;
+  const ignoreList = await db.client.ignoreLists.findOne({ name: listName });
+  if (!ignoreList) {
+    await db.client.ignoreLists.insertOne({ name: listName, addresses: [] });
+    return res.send({
+      success: true,
+      payload: { name: listName, addresses: [] },
+    });
+  }
+  res.send({ success: true, payload: ignoreList });
+});
+
+app.get('/add-ignore-address', async (req, res) => {
+  const { listName, label, address } = req.query;
+  const result = await db.client.ignoreLists.findOneAndUpdate(
+    { name: listName },
+    { $addToSet: { addresses: { label, address: address.toLowerCase() } } },
+    { returnOriginal: false }
+  );
+  if (!result.ok) {
+    return res.send({ success: false });
+  }
+  res.send({ success: true, payload: result.value });
+});
+
+app.get('/remove-ignore-address', async (req, res) => {
+  const { listName, address } = req.query;
+  const result = await db.client.ignoreLists.findOneAndUpdate(
+    { name: listName },
+    { $pull: { addresses: { address: address.toLowerCase() } } },
+    { returnOriginal: false }
+  );
+  if (!result.ok) {
+    return res.send({ success: false });
+  }
+  res.send({ success: true, payload: result.value });
 });
 
 app.get('*', (_, res) => {

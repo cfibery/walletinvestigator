@@ -1,9 +1,8 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import styled from 'styled-components';
-import Switch from 'react-switch';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearchDollar, faRunning } from '@fortawesome/free-solid-svg-icons';
+import Switch from '../Switch';
 
 const Wrapper = styled.div`
   display: grid;
@@ -14,9 +13,6 @@ const Wrapper = styled.div`
 `;
 
 const StyledSwitch = styled(Switch)`
-  .svg-inline--fa {
-    color: #fff;
-  }
   .fa-search-dollar {
     transform: translate(40%, 5%);
   }
@@ -40,14 +36,8 @@ function ModeSwitcher() {
       <StyledSwitch
         checked={mode === 'inquire'}
         onChange={handleChange}
-        offColor="#ff9800"
-        onColor="#8883d9"
-        offHandleColor="#fff"
-        onHandleColor="#fff"
-        height={25}
-        width={50}
-        uncheckedIcon={<FontAwesomeIcon icon={faRunning} />}
-        checkedIcon={<FontAwesomeIcon icon={faSearchDollar} />}
+        uncheckedIcon={faRunning}
+        checkedIcon={faSearchDollar}
       />
     </Wrapper>
   );
