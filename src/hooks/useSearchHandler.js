@@ -178,17 +178,29 @@ async function fetchPrices(holdings) {
     return acc;
   }, {});
 
-  const addressSlices = sliceArray(Object.keys(priceTokensMap), 150); // 150 addresses is about the max the API can handle
+  let addressSlices = sliceArray(Object.keys(priceTokensMap), 150); // 150 addresses is about the max the API can handle
   let tokenPricesMap = {};
-  await Promise.all(
-    addressSlices.map(async (addressSlice) => {
-      const response = await wrappedFetch(
-        `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=${addressSlice}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`
-      );
-      const data = await response.json();
-      tokenPricesMap = { ...tokenPricesMap, ...data };
-    })
-  );
+  do {
+    addressSlices = addressSlices.filter((e) => e !== true);
+    const prices = await Promise.all(
+      addressSlices.map(async (addressSlice, idx, arr) => {
+        try {
+          const response = await wrappedFetch(
+            `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=${addressSlice}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`
+          );
+          const data = await response.json();
+          arr[idx] = true;
+          return data;
+        } catch (err) {
+          console.log(err);
+        }
+      })
+    );
+    tokenPricesMap = prices.reduce(
+      (acc, data) => ({ ...acc, ...data }),
+      tokenPricesMap
+    );
+  } while (addressSlices.some((e) => e !== true));
   return tokenPricesMap;
 }
 
