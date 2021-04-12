@@ -79,6 +79,7 @@ async function queryHoldings(addresses) {
   const response = await wrappedFetch('https://graphql.bitquery.io/', {
     headers: {
       'content-type': 'application/json',
+      'X-API-KEY': 'BQYdIfW0qOGHSpoDOjYpoj44xuc5ZM8Y',
     },
     method: 'POST',
     body: JSON.stringify({
@@ -92,6 +93,7 @@ async function queryHistory(addresses, lastBlock) {
   const response = await wrappedFetch('https://graphql.bitquery.io/', {
     headers: {
       'content-type': 'application/json',
+      'X-API-KEY': 'BQYdIfW0qOGHSpoDOjYpoj44xuc5ZM8Y',
     },
     method: 'POST',
     body: JSON.stringify({
