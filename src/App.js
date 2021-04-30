@@ -58,7 +58,7 @@ function App() {
         )}
         <Footer>
           <VisitorsCounter />
-          <DiscordLink href="https://discord.gg/pHcSxs3" target="_blank">
+          <DiscordLink href="https://discord.gg/SwnKHntVSY" target="_blank">
             Discord
           </DiscordLink>
           <Settings />
